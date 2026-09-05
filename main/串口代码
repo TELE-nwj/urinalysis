@@ -1,0 +1,39 @@
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/uart.h"
+#include "esp_log.h"
+
+// 定义 UART1 的引脚
+#define UART1_TX_PIN  17
+#define UART1_RX_PIN  18
+
+static const char *TAG = "UART1";
+
+void app_main(void)
+{
+    // 1. 配置 UART1 参数
+    uart_config_t uart_config = {
+        .baud_rate = 115200,                      // 波特率
+        .data_bits = UART_DATA_8_BITS,            // 数据位：8位
+        .parity    = UART_PARITY_DISABLE,         // 校验位：无
+        .stop_bits = UART_STOP_BITS_1,            // 停止位：1位
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,    // 硬件流控：关闭
+        .source_clk = UART_SCLK_DEFAULT,          // 时钟源
+    };
+
+    // 2. 配置并安装驱动
+    uart_driver_install(UART_NUM_1, 1024, 0, 0, NULL, 0);
+    uart_param_config(UART_NUM_1, &uart_config);
+    uart_set_pin(UART_NUM_1, UART1_TX_PIN, UART1_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+
+    ESP_LOGI(TAG, "UART1 initialized on TX=GPIO%d, RX=GPIO%d", UART1_TX_PIN, UART1_RX_PIN);
+
+    // 3. 循环发送数据
+    char send_data[] = "Hello from UART1!\r\n";
+    while (1) {
+        // 通过 UART1 发送数据
+        uart_write_bytes(UART_NUM_1, (const char *)send_data, sizeof(send_data) - 1);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
