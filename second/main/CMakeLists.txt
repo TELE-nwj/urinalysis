@@ -1,0 +1,27 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "app/monitor/monitor.c"
+        "app/S1/S1.c"
+        "app/S2/S2.c"
+        "app/S3/S3.c"
+        "app/S4/S4.c"
+        "service/urine/urine.c"
+        "service/screen/screen.c"
+        "service/storage/storage.c"
+        "driver/time_svc/time_svc.c"
+        "driver/ch376/ch376_spi.c"
+        "driver/drop/drop.c"
+        "driver/key/key.c"
+        "driver/screen_uart/screen_uart.c"
+        "driver/battery/battery.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        esp_common
+        esp_timer
+        esp_driver_uart
+        esp_driver_gpio
+        log
+        freertos
+)
