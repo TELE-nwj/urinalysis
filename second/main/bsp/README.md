@@ -36,25 +36,29 @@
 | `BSP_PIN_UART_SCREEN_RX` | GPIO18 | MCU RX ← 屏 TX |
 | `BSP_UART_SCREEN_BAUD` | 115200 | 按屏设置 |
 
-### 按键（4 路，低有效/内部上拉）
+### 按键（2 路，低有效/内部上拉）
 
-| 宏 | 引脚 |
-|---|---|
-| `BSP_PIN_KEY1` | GPIO4 |
-| `BSP_PIN_KEY2` | GPIO5 |
-| `BSP_PIN_KEY3` | GPIO8 |
-| `BSP_PIN_KEY4` | GPIO9 |
+| 宏 | 引脚 | 说明 |
+|---|---|---|
+| `BSP_PIN_KEY1` | GPIO8 | 按键 1 |
+| `BSP_PIN_KEY2` | GPIO9 | 按键 2 |
 
-> 接口在 `driver/key`，**业务未接入**。
+> 接口在 `driver/key`：软件消抖、**只出短按事件**（无长按/连发），**业务未接入**。
+> 注：原 KEY1/KEY2 用的 GPIO4 / GPIO5 现已改作 INA228 的 ALERT / SDA。
 
-### 电池 ADC（占位）
+### 电池（INA228 电量计，I2C）
 
-| 宏 | 值 |
-|---|---|
-| `BSP_ADC_BATTERY_UNIT` | `ADC_UNIT_1` |
-| `BSP_PIN_BATTERY_ADC` | GPIO7 |
+| 宏 | 值 | 说明 |
+|---|---|---|
+| `BSP_I2C_INA_PORT` | `0` | I2C0 |
+| `BSP_PIN_INA_SDA` | GPIO5 | INA228 SDA |
+| `BSP_PIN_INA_SCL` | GPIO6 | INA228 SCL |
+| `BSP_PIN_INA_ALERT` | GPIO4 | ALERT（低有效），`0` 表示不使用 |
+| `BSP_INA228_ADDR` | `0x40` | 7 位地址（A1=A0 接 GND） |
+| `BSP_I2C_INA_FREQ_HZ` | `400000` | 400kHz 快速模式 |
 
-> `driver/battery` 仍是 stub，未实现。
+> 取代原 GPIO7 的 ADC 电池检测；`driver/battery`（ADC stub）已不编入构建。
+> 写 INA228 驱动时需把 `esp_driver_i2c` 加进 `main/CMakeLists.txt` 的 `REQUIRES`。
 
 ### 其他
 

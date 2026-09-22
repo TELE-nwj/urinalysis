@@ -35,13 +35,12 @@ extern "C" {
 /* ==================== 液滴检测 ==================== */
 #define BSP_PIN_DROP_DETECT   GPIO_NUM_10   /* 每滴一个上升沿 */
 
-/* ==================== 按键 (4路) —— 本板不使用 ====================
- * 新板(正式版)取消按键，GPIO4/5/8/9 已释放。
- * driver/key 仍在仓库里，但未编入本板构建；换板要用时恢复本段并把
- * driver/key/key.c 加回 main/CMakeLists.txt 的 SRCS。
- * 原定义：KEY1=GPIO4(原START)  KEY2=GPIO5(原SELECT)  KEY3=GPIO8  KEY4=GPIO9
- *         （低有效 / 内部上拉 / 3 次采样消抖 / 1.5s 长按）
+/* ==================== 按键 (2 路) ====================
+ * 低有效(按下接地) + 内部上拉；只做软件消抖，只出"短按"事件(无长按/连发)。
+ * KEY1/KEY2 沿用原 KEY3/KEY4 的引脚：GPIO4/GPIO5 已改作 INA228 ALERT/SDA。
  */
+#define BSP_PIN_KEY1          GPIO_NUM_8    /* 按键 1 */
+#define BSP_PIN_KEY2          GPIO_NUM_9    /* 按键 2 */
 
 /* ==================== 串口屏 (淘晶驰 TJC/Nextion 类, UART1) ================= */
 #define BSP_UART_SCREEN_NUM   UART_NUM_1    /* 使用 UART1 (避开 UART0 日志口) */
