@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 /* ============ 可调参数（方式 A / 计量） ============ */
-#define URINE_DROP_ML_DEFAULT   0.05f   /* ml/滴，需按实际标定 */
+#define URINE_DROP_ML_DEFAULT   0.5f   /* ml/滴，需按实际标定 */
 #define URINE_BAG_FULL_ML       2000.0f /* 尿袋满阈值 ml */
 #define URINE_AVG_N             2u      /* 速率滑动平均取的间隔个数 */
 #define URINE_DRY_SEC           4u      /* 方式A: 单间隔 >4s 视为过慢 */

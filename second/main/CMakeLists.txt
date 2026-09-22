@@ -12,9 +12,10 @@ idf_component_register(
         "driver/time_svc/time_svc.c"
         "driver/ch376/ch376_spi.c"
         "driver/drop/drop.c"
-        "driver/key/key.c"
         "driver/screen_uart/screen_uart.c"
-        "driver/battery/battery.c"
+        # 本板(正式版)不用按键与 ADC 电池检测，下面两个驱动保留在仓库但暂不编入：
+        #   driver/key/key.c        按键(原 GPIO4/5/8/9)
+        #   driver/battery/battery.c 电池 ADC(原 GPIO7) —— 改由 INA228 走 I2C
     INCLUDE_DIRS
         "."
     REQUIRES
