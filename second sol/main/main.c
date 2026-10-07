@@ -1,23 +1,28 @@
 /* ============================================================
- * 入口层：只做初始化与任务编排，不写业务细节。
+ * 入口层（组合根）：只做初始化编排与任务启动，不写业务细节。
  *
  * 分层：main → app → service → driver
- *   - driver : 硬件(drop/screen_uart/ch376/time_svc)
- *   - service: 串口屏显示、U盘存储、尿量解算
- *   - app    : 两键三态状态机
+ *   - service: 时钟/输入/尿量/屏显/存储/电量 —— app 层唯一可见的接口面
+ *   - driver : 硬件(drop / screen_uart / ch376 / time_svc / walltime / battery)
+ *   - app    : 三态状态机（待开始 / 测量中=S1 / 暂停=S2）
+ *
+ * 【为什么这里一个 driver 头文件都不 include】
+ *   本文件是"组合根"，只调 service 层的 init；各模块自己的硬件初始化由对应
+ *   service 在自己的 init 内部完成（例如 screen_init 里初始化 UART、
+ *   power_init 里初始化 ADC）。这样入口与应用层都不会散落驱动细节。
  * ============================================================ */
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/* driver */
-#include "driver/drop/drop.h"
-#include "driver/screen_uart/screen_uart.h"
-#include "driver/time_svc/time_svc.h"
+#include "bsp/err.h"
 
 /* service */
+#include "service/clock/clock.h"
+#include "service/power/power.h"
 #include "service/screen/screen.h"
 #include "service/storage/storage.h"
+#include "service/urine/urine.h"
 
 /* app */
 #include "app/monitor/monitor.h"
@@ -30,30 +35,29 @@ void app_main(void)
        (IDE 的"当前工程"曾经指向参考工程 F:\ESP32\niaio\project，别烧错了) */
     ESP_LOGI(TAG, "=================================================");
     ESP_LOGI(TAG, "尿量计启动  分层版  build %s %s", __DATE__, __TIME__);
-    ESP_LOGI(TAG, "功能: 两键三态 + 串口屏显示 + 每分钟写U盘");
+    ESP_LOGI(TAG, "功能: 两键三态 + 串口屏 + 每分钟写U盘 + 电量/时间");
     ESP_LOGI(TAG, "=================================================");
 
-    /* ---- driver 初始化 ---- */
-    timesvc_init();          /* 底层取时 */
-    if (drop_init() != ERR_OK) {
-        ESP_LOGE(TAG, "液滴输入初始化失败，停止启动");
-        return;
-    }
-    if (screen_uart_init() != ERR_OK) {
-        ESP_LOGE(TAG, "串口屏 UART 初始化失败，停止启动");
-        return;
-    }
+    /* ---- service 初始化（底层硬件在各自 init 内部完成） ---- */
+    clock_init();          /* 时基 + 墙上时间(未对时从 00:00:00 起算) */
+    urine_capture_init();  /* 液滴采集 GPIO 与中断 */
 
-    /* ---- service 初始化 ---- */
-    if (storage_init() != ERR_OK) {          /* U盘: 进主机模式+检测磁盘 */
+    if (screen_init() != ERR_OK) {          /* 串口屏 UART + 首页与初值 */
+        ESP_LOGE(TAG, "串口屏初始化失败，停止启动");
+        return;
+    }
+    if (power_init() != ERR_OK) {           /* 电池 ADC 分压采样 */
+        ESP_LOGW(TAG, "电量检测初始化失败，继续运行(电量显示 --)");
+    }
+    if (storage_init() != ERR_OK) {         /* U盘: 进主机模式+检测磁盘 */
         ESP_LOGW(TAG, "存储未就绪(可能没插U盘), 仍继续运行");
     }
-    screen_init();           /* 串口屏服务: 只发送显示指令 */
 
-    /* ---- app 启动 ---- */
+    /* ---- app 启动：按键与状态机 ---- */
     if (app_monitor_start() != ERR_OK) ESP_LOGE(TAG, "按键/状态机启动失败");
 
-    /* 主循环空转；按键、测量和状态转换都由 monitor 任务处理。 */
+    /* 主循环空转；按键、测量、状态转换，以及每秒的电量/时间推送，
+       全部由 monitor 任务处理。 */
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

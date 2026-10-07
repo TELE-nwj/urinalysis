@@ -8,6 +8,7 @@
 
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "esp_adc/adc_oneshot.h"   /* 电池分压采样用的 ADC_UNIT_x / ADC_CHANNEL_x */
 
 #ifdef __cplusplus
 extern "C" { 
@@ -51,12 +52,26 @@ extern "C" {
 
 /* ==================== 电池电压检测 (ADC 分压) ====================
  * 电池电压经板上电阻分压网络接到 ADC 引脚，由 driver/battery 采样后换算电量。
- * 分压比 (R1+R2)/R2 待定 —— 实现时在 battery 驱动里用宏定义，不要硬编码。
  * 注：原 INA228 电量计(I2C, 占 GPIO4/5/6)方案已取消，该三脚现为空闲。
  *     分压后的电压不得超过 ADC 量程(见 ADC_ATTEN_DB_12 ≈ 3.3V)。
+ *
+ * 分压网络(实物原理图)：
+ *     BAT ──R59(200k)──┬──R61(1k)── ADC(GPIO7)
+ *                      │
+ *                    R60(200k)      C13(100nF)
+ *                      │               │
+ *                     GND             GND
+ *
+ *   采样节点电压 = V_bat × R60/(R59+R60) = V_bat × 200/400 = V_bat/2
+ *   所以 V_bat = V_adc × DIV_NUM / DIV_DEN。
+ *   R61(1k) 是串在 ADC 前的限流电阻，ADC 输入为高阻，不参与分压计算。
+ *   满电 4.2V → 2.1V 入 ADC；放空 2.7V → 1.35V，均在 12dB 量程内。
  */
-#define BSP_ADC_BATTERY_UNIT  ADC_UNIT_1    /* ADC 单元: ADC1 */
-#define BSP_PIN_BATTERY_ADC   GPIO_NUM_7    /* 分压采样脚 (ESP32-S3 ADC1_CH6) */
+#define BSP_ADC_BATTERY_UNIT    ADC_UNIT_1        /* ADC 单元: ADC1 */
+#define BSP_PIN_BATTERY_ADC     GPIO_NUM_7        /* 分压采样脚 */
+#define BSP_BATTERY_ADC_CHANNEL ADC_CHANNEL_6     /* GPIO7 = ADC1_CH6 */
+#define BSP_BATTERY_DIV_NUM     400u              /* R59+R60 (kΩ) */
+#define BSP_BATTERY_DIV_DEN     200u              /* R60 (kΩ) */
 
 #ifdef __cplusplus
 }

@@ -33,14 +33,21 @@ static void IRAM_ATTR drop_isr(void *arg)
 {
     (void)arg;
     uint64_t now = esp_timer_get_time();
+
+    /* 整个处理过程都在自旋锁内：
+     * s_prev_drop_us 是 64 位量，任务侧的 drop_reset_interval() 也会把它写 0，
+     * 双核上若在锁外读，可能读到"半新半旧"的撕裂值，导致消抖判断与入队时间差
+     * 算错(偶发多计/漏计一滴)。消抖只是一次比较，放进锁内的开销可以忽略。 */
+    portENTER_CRITICAL_ISR(&s_spin);
+
     uint64_t prev = s_prev_drop_us;
 
     /* 消抖：距上一有效滴 < 0.5s 视为抖动 */
     if (prev != 0 && (now - prev) < DROP_DEBOUNCE_US) {
+        portEXIT_CRITICAL_ISR(&s_spin);
         return;
     }
 
-    portENTER_CRITICAL_ISR(&s_spin);
     s_total++;                       /* 有效滴计数(永不清零) */
     if (prev != 0) {                 /* 有上一滴 → 得到一个有效相邻间隔 */
         uint16_t next = (s_q_head + 1) % QUEUE_SIZE;
@@ -66,10 +73,19 @@ err_t drop_init(void)
         ESP_LOGE(TAG, "gpio_config fail");
         return ERR_FAIL;
     }
-    if (gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1) != ESP_OK) {
-        /* 已安装则忽略 */
+    /* ISR 服务可能已被别的模块先装过：那种情况返回 ESP_ERR_INVALID_STATE，属正常；
+       其它错误必须报出来——否则中断装不上会表现为"一滴都收不到"却毫无线索。 */
+    esp_err_t e = gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
+    if (e != ESP_OK && e != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "gpio_install_isr_service fail: %s", esp_err_to_name(e));
+        return ERR_FAIL;
     }
-    gpio_isr_handler_add(BSP_PIN_DROP_DETECT, drop_isr, NULL);
+    /* 挂上滴落中断；失败同样是"静默收不到滴"，必须报错返回。 */
+    e = gpio_isr_handler_add(BSP_PIN_DROP_DETECT, drop_isr, NULL);
+    if (e != ESP_OK) {
+        ESP_LOGE(TAG, "gpio_isr_handler_add fail: %s", esp_err_to_name(e));
+        return ERR_FAIL;
+    }
     ESP_LOGI(TAG, "drop ISR on GPIO%d (方式A, debounce=%.1fs)",
              BSP_PIN_DROP_DETECT, DROP_DEBOUNCE_US / 1000000.0);
     return ERR_OK;

@@ -44,7 +44,8 @@ USB/文件操作都是"发命令 → 等 INT# 拉低 → 读状态码"的阻塞�
 
 | 函数 | 命令 | 说明 |
 |---|---|---|
-| `CH376T_FILE_OPEN_NAME(name)` | 0x2F+0x32 | 【新】按名字打开文件（不存在则失败） |
+| `CH376T_FILE_OPEN_STATUS(name)` | 0x2F+0x32 | 【新】按名字打开文件并**返回原始状态码**（`0x14` 存在 / `0x42` 不存在），不打日志；`storage` 用它区分"文件在不在" |
+| `CH376T_FILE_OPEN_NAME(name)` | 0x2F+0x32 | 【新】`FILE_OPEN_STATUS` 的包装：成功打 INFO、失败打 ERROR，返回 1/0 |
 | `CH376T_FILE_CREATE_NAME(name)` | 0x2F+0x34 | 【新】按名字创建文件 |
 | `CH376T_BYTE_WRITE_DATA(data,len)` | 0x3C/0x2D/0x3D | 【新】写任意长度数据（内部分批循环到写完） |
 | `CH376T_BYTE_LOCATE(offset)` | 0x39 | 【新】移动文件指针（**追加写必须**：打开后指针在开头，要先定位到文件长度处） |
@@ -129,7 +130,9 @@ CH376T_FILE_CLOSE();                      /* 0x36 参数 0x01 → 更新长度�
 ### 4.5 日志量
 
 `wait()` / `CH376_GetStatus()` 每次都打 `ESP_LOGI`。写盘时会刷很多行。
-上层在**写盘临界区内**用 `esp_log_level_set("CH376T", ESP_LOG_NONE)` 临时屏蔽。
+`app/S1` 在**写盘临界区内**把 `CH376T`（本驱动）与 `storage`（`service/storage`）两个 TAG 的日志等级
+用 `esp_log_level_get()` **先保存**、再 `esp_log_level_set(..., ESP_LOG_NONE)` 降级，出临界区按保存值恢复
+（不硬编码写回 `ESP_LOG_INFO`，别人调过的等级不会被踩掉）。
 
 ---
 

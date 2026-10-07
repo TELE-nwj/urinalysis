@@ -6,33 +6,30 @@
 
 static const char *TAG = "screen_uart";
 
-/* 接收缓冲大小 */
-#define RX_BUF_SIZE       (1024)
-#define TX_BUF_SIZE       (256)
-/* 注意：screen 服务的按行解析 + monitor 的命令处理(状态机、snprintf、主动推屏)
-   全部跑在本 RX 任务上下文里，所以栈不能给小，否则会栈溢出/静默卡死。 */
-#define RX_TASK_STACK     (4096)
-#define RX_TASK_PRIO      (6)
-
-static screen_uart_rx_cb_t s_rx_cb = NULL;
-
-static void uart_rx_task(void *arg)
-{
-    (void)arg;
-    uint8_t buf[128];
-    for (;;) {
-        /* 阻塞读取(最长等一段空闲)，取到数据就回调 */
-        int len = uart_read_bytes(BSP_UART_SCREEN_NUM, buf, sizeof(buf),
-                                  pdMS_TO_TICKS(50));
-        if (len > 0 && s_rx_cb) {
-            s_rx_cb(buf, (size_t)len);
-        }
-    }
-}
+/*
+ * 【为什么只发不收】
+ * 本工程屏端不再向 MCU 发任何命令，MCU 侧也没有解析屏数据的逻辑，收进来的字节
+ * 只会白占内存和 CPU。因此这一版：
+ *   - 删除了接收回调与同步读接口，以及原来的接收任务(含 4KB 任务栈)；
+ *   - 固件从不调用 uart_read_bytes、也不注册任何 RX 事件。
+ *
+ * ⚠ 注意：**不能**靠"把 rx_buffer_size 传 0"来省掉 RX 缓冲。
+ *   ESP-IDF 在 uart_driver_install() 里做了硬性校验
+ *   (components/esp_driver_uart/src/uart.c 的 uart_driver_install)：
+ *       rx_buffer_size 必须 > UART_HW_FIFO_LEN(端口)，否则直接返回 ESP_FAIL；
+ *       tx_buffer_size 才允许为 0。
+ *   ESP32-S3 的 UART1 FIFO 是 128 字节，所以 RX 缓冲必须给 >128 的值(这里给 256)。
+ *   真正的"只收不发"是靠"分配了缓冲但永远不读"实现的：屏端若发数据，只会把这
+ *   256 字节填满，之后由驱动丢弃，固件侧完全无感。
+ * 好处：仍然省掉了一个接收任务与"RX 回调里发屏"和"其它模块发屏"之间的并发竞争
+ *   ——发送路径只剩一条。
+ */
+#define RX_BUF_SIZE  (256)   /* 必须 > UART FIFO(128)；固件不读它，仅满足驱动校验 */
+#define TX_BUF_SIZE  (256)   /* 发送环形缓冲：屏指令都很短，256 字节足够 */
 
 err_t screen_uart_init(void)
 {
-    /* 1. 串口参数：默认与参考实现一致(115200 8N1 无流控) */
+    /* 1. 串口参数：115200 8N1 无流控(与屏端工程设置一致) */
     uart_config_t cfg = {
         .baud_rate  = BSP_UART_SCREEN_BAUD,
         .data_bits  = UART_DATA_8_BITS,
@@ -42,20 +39,35 @@ err_t screen_uart_init(void)
         .source_clk = UART_SCLK_DEFAULT,
     };
 
-    /* 2. 安装驱动 */
-    esp_err_t e = uart_driver_install(BSP_UART_SCREEN_NUM, RX_BUF_SIZE,
-                                      TX_BUF_SIZE, 0, NULL, 0);
+    /* 2. 安装驱动：RX 缓冲必须 > 128(见文件头说明，传 0 会被驱动直接拒绝)，
+     *    这个缓冲固件永远不读——"只发不收"是靠不读实现的，不是靠不分配。
+     *    发送仍需缓冲故 tx_buffer_size 给 256；不用事件队列，传 0/NULL。 */
+    esp_err_t e = uart_driver_install(BSP_UART_SCREEN_NUM, RX_BUF_SIZE, TX_BUF_SIZE, 0, NULL, 0);
     if (e != ESP_OK) {
         ESP_LOGE(TAG, "uart_driver_install failed: %s", esp_err_to_name(e));
         return ERR_FAIL;
     }
-    uart_param_config(BSP_UART_SCREEN_NUM, &cfg);
+    /* 3. 配置参数与绑定引脚：这两步都必须判返回值——波特率/引脚配错了，屏上一个
+     *    字都不会显示，日志却写着"ready"，现场根本无从判断。失败就地卸载驱动
+     *    (回滚安装)再上报，避免留下一个半配置的 UART。 */
+    e = uart_param_config(BSP_UART_SCREEN_NUM, &cfg);
+    if (e != ESP_OK) {
+        ESP_LOGE(TAG, "uart_param_config failed: %s", esp_err_to_name(e));
+        uart_driver_delete(BSP_UART_SCREEN_NUM);
+        return ERR_FAIL;
+    }
 
-    /* 3. 绑定引脚 */
-    uart_set_pin(BSP_UART_SCREEN_NUM, BSP_PIN_UART_SCREEN_TX,
-                 BSP_PIN_UART_SCREEN_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    /* TX 必须绑；RX 按引脚表照样绑上，但固件永远不读它(数据被驱动丢弃)，
+     * 保留绑定只是为了将来排查硬件时不用改配置。 */
+    e = uart_set_pin(BSP_UART_SCREEN_NUM, BSP_PIN_UART_SCREEN_TX,
+                     BSP_PIN_UART_SCREEN_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    if (e != ESP_OK) {
+        ESP_LOGE(TAG, "uart_set_pin failed: %s", esp_err_to_name(e));
+        uart_driver_delete(BSP_UART_SCREEN_NUM);
+        return ERR_FAIL;
+    }
 
-    ESP_LOGI(TAG, "screen uart%d ready: TX=GPIO%d RX=GPIO%d @%d",
+    ESP_LOGI(TAG, "screen uart%d ready (tx only): TX=GPIO%d RX=GPIO%d @%d",
              BSP_UART_SCREEN_NUM, BSP_PIN_UART_SCREEN_TX,
              BSP_PIN_UART_SCREEN_RX, BSP_UART_SCREEN_BAUD);
     return ERR_OK;
@@ -76,22 +88,4 @@ err_t screen_uart_send_str(const char *str)
         return ERR_PARAM;
     }
     return screen_uart_send(str, strlen(str));
-}
-
-int screen_uart_read(uint8_t *buf, size_t size, TickType_t timeout)
-{
-    if (!buf || size == 0) {
-        return ERR_PARAM;
-    }
-    int len = uart_read_bytes(BSP_UART_SCREEN_NUM, buf, size, timeout);
-    return len;
-}
-
-void screen_uart_set_rx_cb(screen_uart_rx_cb_t cb)
-{
-    s_rx_cb = cb;
-    if (cb && !xTaskCreate(uart_rx_task, "uart_rx", RX_TASK_STACK, NULL,
-                           RX_TASK_PRIO, NULL)) {
-        ESP_LOGE(TAG, "create uart_rx task failed");
-    }
 }

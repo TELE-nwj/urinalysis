@@ -1,12 +1,15 @@
 #include "S2.h"
-#include "service/screen/screen.h"
-#include "esp_log.h"
+#include "app/S1/S1.h"
 
-static const char *TAG = "S2";
-
-/* ===== S2 已登录未开始测量 ===== */
+/* ===== S2 暂停 =====
+ * 进入本状态要做两件事：
+ *   ① 结算：会话计时推进到"暂停瞬间"并冻结(暂停期间的时间不计入会话，
+ *      继续时由 S1_enter() 把记账基准重设到那一刻)；
+ *   ② 冻结显示：把 4 个数值控件按结算后的结果推一次，屏上停在暂停时的读数
+ *      —— 尤其是实时速率，不结算的话屏上会一直挂着暂停前的最后一个值。
+ * 之后 monitor 会关掉滴落中断，暂停期间落下的滴不再计入。 */
 void S2_enter(void)
 {
-    ESP_LOGI(TAG, "进入 S2 已登录未开始");
-    screen_show_status("READY");
+    S1_settle();          /* ① 计时结算 + 实时速率清零 */
+    S1_push_values();     /* ② 数值冻结在屏上 */
 }
