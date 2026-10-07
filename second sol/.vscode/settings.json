@@ -1,0 +1,6 @@
+{
+    "idf.currentSetup": "F:\\ESP32\\v5.5.5\\esp-idf",
+    "idf.flashType": "UART",
+    "python.analysis.stubPath": "C:\\Users\\23027\\.kendryte\\k230_canmv_pylance\\f18cd5c16ae51539\\typings",
+    "idf.port": "COM19"
+}
