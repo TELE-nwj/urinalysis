@@ -1,0 +1,3 @@
+b69439b320eaa030d4baa34deae320e5759257b24a01548c72df0029f8aa3e9c  third.bin
+a2c8ef73163c7af5dbe782474b270164c3701d277379c4e577d37e8f85e2f5ed  bootloader/bootloader.bin
+7f00b6c042a89b15b0cac534f82ed988caf29278ff5700b0c511eb1b5bb7c820  partition_table/partition-table.bin

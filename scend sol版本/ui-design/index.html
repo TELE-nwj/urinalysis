@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>尿量监测仪 · 三页交互设计稿</title>
+  <link rel="stylesheet" href="preview.css">
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <header class="review-bar">
+    <div><h1>三页交互设计稿</h1><p>所有数据均为样例 · 仅审核设计，不连接设备、不修改真实记录</p></div>
+    <details><summary>预览状态</summary><div class="preview-options">
+      <label>连接状态<select id="connection"><option value="online">已连接</option><option value="offline">Wi-Fi 未连接</option></select></label>
+      <label>U 盘状态<select id="storage"><option value="ready">可用</option><option value="absent">未连接</option><option value="error">写入失败</option></select></label>
+      <button id="notify-preview" class="outline">查看警报通知样式</button>
+    </div></details>
+  </header>
+  <main class="stage">
+    <section class="phone" aria-label="安卓三页设计预览">
+      <div class="status-bar"><span>15:50</span><span id="status-icons"></span></div>
+      <div id="app" class="app"></div>
+      <nav id="bottom-nav" class="bottom-nav" aria-label="主导航"></nav>
+      <div class="system-bar"><i></i></div>
+      <div id="snackbar" role="status" class="snackbar" hidden></div>
+      <aside id="notification" class="notification" aria-label="警报通知设计样例" hidden></aside>
+    </section>
+  </main>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-body"></div></dialog>
+</body>
+</html>

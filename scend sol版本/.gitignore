@@ -1,0 +1,13 @@
+**/.gradle/
+**/.kotlin/
+**/build/
+**/.android-user/
+**/.gradle-cache/
+**/local.properties
+**/sdkconfig.old
+**/__pycache__/
+*.pyc
+*.jks
+*.keystore
+.env
+.env.*

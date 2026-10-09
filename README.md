@@ -1,10 +1,16 @@
 # urinalysis
 
+## scend sol版本（2026-10-09）
+
+[完整软件与固件资料](scend%20sol%E7%89%88%E6%9C%AC/README.md) · [安卓 APK 1.1-v2](scend%20sol%E7%89%88%E6%9C%AC/android/niaio-mobile-v2-debug.apk) · [ESP32 工程与烧录说明](scend%20sol%E7%89%88%E6%9C%AC/esp32/README.md)
+
+包含安卓三页 APP 源码和安装文件、ESP32-S3 固件源码及匹配镜像、协议、UI 设计和验证资料。远程更新目前仅有入口。以下保留早期版本的历史说明。
+
 尿液检测项目
 
 ---
 
-## 当前进度
+## 历史进度
 
 > 快照日期：2026-09-14 ｜ 硬件：ESP32-S3 ｜ SDK：ESP-IDF v5.5.5
 
