@@ -1,0 +1,617 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>third 固件问题分析与修复技术报告</title><style>
+:root{color-scheme:light;--fg:#203348;--muted:#526578;--line:#d2dce5;--paper:#fff;--canvas:#eff3f6}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}body{margin:0;background:var(--canvas);color:var(--fg);font:16px/1.85 'Segoe UI','Microsoft YaHei',sans-serif}main{max-width:1020px;margin:28px auto;background:var(--paper);padding:44px 52px}h1{font-size:30px;line-height:1.35;margin:0 0 24px}h2{font-size:24px;line-height:1.5;margin:52px 0 16px;border-bottom:1px solid var(--line);padding-bottom:12px}h3{font-size:19px;margin:28px 0 10px}p{margin:13px 0}a{color:#175e91;text-underline-offset:4px;overflow-wrap:anywhere}a:hover{color:#093953}a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid #175e91;outline-offset:3px}code{background:#edf2f6;border-radius:3px;padding:2px 4px;font-size:.87em;font-family:Consolas,monospace;overflow-wrap:anywhere}pre{padding:18px;background:#162737;color:#edf4fa;overflow:auto;line-height:1.7;border-radius:6px}pre code{background:none;color:inherit;padding:0;font-size:13px;overflow-wrap:normal}.table-scroll{overflow:auto;scrollbar-color:#7a90a3 #eef2f5}table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;line-height:1.75;margin:12px 0 22px}th,td{border-bottom:1px solid var(--line);padding:12px 14px;text-align:left;vertical-align:top}th{background:#ecf2f7;font-weight:600}td:first-child{min-width:145px}details{padding:15px 18px;background:#f0f5f8;border-radius:6px;margin-bottom:28px}summary{cursor:pointer;font-weight:600}nav{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;padding-top:16px;font-size:14px}.map{padding:12px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#f6f8fa;scrollbar-color:#7a90a3 #eef2f5}.map svg{display:block;width:100%;height:auto;min-width:560px}.map-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:13px}button{font:inherit;cursor:pointer;border:1px solid #b2c3d2;background:#fff;color:#203348;border-radius:5px;padding:6px 12px}button:hover{background:#e4edf4}.map-tools a{margin-left:auto}li{padding-left:3px;margin:7px 0}::selection{background:#bdd7ed}.top{font-size:13px;display:flex;gap:20px;flex-wrap:wrap;margin-bottom:22px}.top button{margin-left:auto}footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}@media(max-width:700px){main{margin:0;padding:25px 18px}h1{font-size:25px}h2{font-size:21px;margin-top:38px}nav{grid-template-columns:1fr}.map svg{min-width:900px}}@media print{body{background:white;font-size:11pt}main{padding:0;max-width:none;margin:0}.top,.map-tools,details{display:none}h2{break-after:avoid}table{min-width:0;font-size:9pt}tr{break-inside:avoid}.table-scroll{overflow:visible}.map svg{min-width:0;width:100%!important}pre{white-space:pre-wrap;background:#edf2f6;color:#203348}a{color:inherit}.map{break-inside:avoid}}
+</style></head><body><main><div class="top"><a href="../graph/index.html">查看交互分支图</a><a href="REPORT.md">下载 Markdown 原文</a><button type="button" onclick="window.print()">打印 / 保存 PDF</button></div><details><summary>报告目录 · 16 个章节</summary><nav><a href="#section-0">1. 结论与当前状态</a><a href="#section-1">2. 版本和证据边界</a><a href="#section-2">3. 问题与修复思维导图</a><a href="#section-3">4. 代码层级与实际调用链</a><a href="#section-4">5. 开始延迟与按键无响应</a><a href="#section-5">6. “写盘成功但没有文件”的定位过程</a><a href="#section-6">7. 重复新建与历史覆盖风险：C 版修复</a><a href="#section-7">8. 文件损坏与非法首簇：D 版保护</a><a href="#section-8">9. D 版空内容：诊断探针本身造成干扰</a><a href="#section-9">10. 写盘事务、Wi-Fi 和液滴采集</a><a href="#section-10">11. 修复与实测时间线</a><a href="#section-11">12. 最新 E 版验收数据</a><a href="#section-12">13. 遗留风险和后续改进</a><a href="#section-13">14. 下一轮最小闭环验收方案</a><a href="#section-14">15. 固件发布与回退记录</a><a href="#section-15">16. 证据索引与复核入口</a></nav></details><h1 id="heading-0">third 固件问题分析与修复技术报告</h1>
+<p><strong>报告日期：2026-10-15｜证据范围：2026-10-12～15｜最新测试固件：20261015-E</strong></p>
+<p>本报告面向 NIAIO 尿量检测设备的维护和后续开发，整理 third 从“开始响应慢、按键偶发无响应”到“U 盘无文件、文件损坏、文件无内容”的调查及修复过程。结论依据已保存的源码、串口日志、电脑只读磁盘证据、模型测试与构建记录。本次只编写报告，没有重新烧录、监听串口或读写 U 盘。</p>
+<h2 id="section-0">1. 结论与当前状态</h2>
+<p><strong>这次故障包含多个不同层面的问题，不能统一解释为 U 盘物理损坏，也不能仅凭“写入成功”日志认定保存成功。</strong></p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>已确认的原因或证据</th>
+<th>修复与现状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首次开始约延迟 3～4 秒、实体短按有时无效</td>
+<td>控制任务同步执行存储初始化和重试，按键轮询依赖同一任务</td>
+<td>阻塞机制已通过代码和按键模型确认；独立存储任务等架构优化尚未实施</td>
+</tr>
+<tr>
+<td>日志创建／写盘成功，电脑正常目录没有文件</td>
+<td>旧版 CH376 兼容流程缺失，挂载的数据区基址稳定提前 1024 扇区；目录和文本实际落在 FAT2 内</td>
+<td>B 版完成有条件的旧芯片兼容处理；B 现场设备与电脑交叉验证过一次正确文件</td>
+</tr>
+<tr>
+<td>一次检测出现多个编号，或同名文件历史内容可能被覆盖</td>
+<td>初次建文件后验证失败未保留会话身份；恢复／追加遇到 0x42 自动 CREATE</td>
+<td>C 版提前锁定会话编号，并禁止恢复和追加路径自动重建；C/E 日志支持保护生效</td>
+</tr>
+<tr>
+<td>有文件但 Windows 提示损坏</td>
+<td>非空文件首簇为 0，表头实际写入 FAT2 的绝对 LBA 16432</td>
+<td>D/E 增加 FAT 保留项、请求前上下文及完成字段检查；固件保护不负责自动修复旧盘损坏</td>
+</tr>
+<tr>
+<td>D 版有文件但没有正常内容</td>
+<td>在 0x1E 数据交接窗口插入 READ_VAR 探针，读到临时 FILE/0001 内容，导致表头根本没有送入</td>
+<td>E 版删除交接期探针，恢复连续的数据供给握手</td>
+</tr>
+<tr>
+<td>最新 E 版能否宣布全部修复</td>
+<td>一次表头、暂停继续、第一分钟追加及设备回读通过；原 TXT 已被用户删除</td>
+<td><strong>设备侧一分钟通过，整体验收仍待完成；正式 third 尚未替换为 E</strong></td>
+</tr>
+</tbody>
+</table>
+<p>“已修复”在本报告中分为代码层修复、模型通过、设备侧验证、电脑持久化交叉验证四个层次。后者不能由前者自动推导。阶段报告为当时的结论，后续实测会收窄或修正它；例如 D 版模型通过后仍在实机暴露握手缺陷。<a href="#source-E01">[E01]</a><a href="#source-E07">[E07]</a><a href="#source-E08">[E08]</a><a href="#source-E09">[E09]</a></p>
+<h2 id="section-1">2. 版本和证据边界</h2>
+<h3 id="heading-104">2.1 三类工程不可混用</h3>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>作用</th>
+<th>本轮报告采用方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>second</code></td>
+<td>用户确认曾经可用的分层参考工程</td>
+<td>比较运行条件和写盘路径；没有在本次重新烧录验证</td>
+</tr>
+<tr>
+<td><code>third</code></td>
+<td>正式基线工程</td>
+<td>101 个基线文件保持一致，不把测试修复覆盖到这里</td>
+</tr>
+<tr>
+<td><code>third_logtest_20261012</code></td>
+<td>独立诊断／修复工程</td>
+<td>日志副本及 A、B、C、D、E 迭代；当前预编译镜像对应 E</td>
+</tr>
+</tbody>
+</table>
+<p>third 是工程目录，并非原有 Git 分支。A～E 是测试固件阶段标识，不是五个已经独立存在的 Git 分支。归档位于 <code>codex/ch376-test-records-20261015</code> 分支。报告引用的当前源码来自该归档的 E 测试工程。<a href="#source-E00">[E00]</a></p>
+<p>历史上曾出现<strong>同名日志被后一次导出覆盖</strong>。例如 <code>串口日志_20261015_174855.log</code> 在两个阶段分别对应 C 与 D 内容，因此不能仅按文件名判断版本。需同时核对启动标识、字节数和 SHA256；已保存的阶段副本优先。<a href="#source-E08">[E08]</a></p>
+<h3 id="heading-163">2.2 介质和硬件上下文</h3>
+<p>已检查现场盘为 General UDisk，整盘 4,026,531,840 字节；H: 分区起点 32,768 字节，即整盘 LBA 64，分区长 4,026,499,072 字节。盘符仅是当时的 Windows 映射，今后操作仍须重新核对物理介质身份。</p>
+<p>目标 MCU 为 ESP32-S3，构建记录使用 ESP-IDF v5.5.5。CH376 实机版本为 <code>0x42</code>；参考与目标使用相同 CH376 GPIO：CS=2、SCK=42、MOSI=41、MISO=40、INT=1。串口日志按 115200、8N1、无流控、UTF-8 保存。本报告不包含新的原理图或示波器验收，不能把未验证的供电、SPI 电气问题写成已排除。<a href="#source-E02">[E02]</a><a href="#source-E04">[E04]</a><a href="#source-E08">[E08]</a></p>
+<h2 id="section-2">3. 问题与修复思维导图</h2>
+<p><div class="map-tools"><button type="button" id="zoomout">缩小</button><button type="button" id="zoomfit">适应宽度</button><button type="button" id="zoomin">放大</button><a href="mindmap.svg" target="_blank">单独打开导图 ↗</a></div><div class="map" aria-label="可缩放的思维导图"><svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1280" viewBox="0 0 1600 1280" role="img" aria-labelledby="title desc"><title id="title">third 问题与修复思维导图</title><desc id="desc">从third中心向六个分支展开：现象、原因、修复、证据、风险、验收。E版设备一分钟通过，正式整体未验收。</desc><rect width="1600" height="1280" fill="#f6f8fa"/><style>text{font-family:Microsoft YaHei,Segoe UI,sans-serif}.leaf{font-size:17px;fill:#253545}.sub{font-size:14px;fill:#526273}.heading{font-size:20px;font-weight:600;fill:#1e3042}</style><path d="M660,640 C625.0,640 625.0,210 590,210" fill="none" stroke="#30799c" stroke-width="4"/><rect x="390" y="182" width="200" height="56" rx="9" fill="white" stroke="#30799c" stroke-width="2"/><text x="410" y="217" class="heading">用户现象</text><path d="M390,210 C365.0,210 365.0,106 340,106" fill="none" stroke="#30799c" stroke-width="2"/><rect x="20" y="69" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="102" class="leaf">开始慢、短按无效</text><text x="34" y="128" class="sub">monitor 同步等待，轮询有空窗</text><path d="M390,210 C365.0,210 365.0,210 340,210" fill="none" stroke="#30799c" stroke-width="2"/><rect x="20" y="173" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="206" class="leaf">日志成功，电脑看不到文件</text><text x="34" y="232" class="sub">先核查目录与真实写入 LBA</text><path d="M390,210 C365.0,210 365.0,314 340,314" fill="none" stroke="#30799c" stroke-width="2"/><rect x="20" y="277" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="310" class="leaf">文件损坏 / 文件无内容</text><text x="34" y="336" class="sub">不同阶段，不能混为同一原因</text><path d="M660,640 C625.0,640 625.0,640 590,640" fill="none" stroke="#a24c53" stroke-width="4"/><rect x="390" y="612" width="200" height="56" rx="9" fill="white" stroke="#a24c53" stroke-width="2"/><text x="410" y="647" class="heading">已确认机制</text><path d="M390,640 C365.0,640 365.0,536 340,536" fill="none" stroke="#a24c53" stroke-width="2"/><rect x="20" y="499" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="532" class="leaf">旧版兼容缺失 → 少 1024 扇区</text><text x="34" y="558" class="sub">数据区 15424，正确应为 16448</text><path d="M390,640 C365.0,640 365.0,640 340,640" fill="none" stroke="#a24c53" stroke-width="2"/><rect x="20" y="603" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="636" class="leaf">会话标识丢失 / 0x42 自动重建</text><text x="34" y="662" class="sub">同次检测多编号或覆盖历史</text><path d="M390,640 C365.0,640 365.0,744 340,744" fill="none" stroke="#a24c53" stroke-width="2"/><rect x="20" y="707" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="740" class="leaf">簇 0 误写 / D 探针干扰</text><text x="34" y="766" class="sub">FAT2 LBA16432；1E 窗口误读</text><path d="M660,640 C625.0,640 625.0,1070 590,1070" fill="none" stroke="#6a5b9a" stroke-width="4"/><rect x="390" y="1042" width="200" height="56" rx="9" fill="white" stroke="#6a5b9a" stroke-width="2"/><text x="410" y="1077" class="heading">修复过程</text><path d="M390,1070 C365.0,1070 365.0,966 340,966" fill="none" stroke="#6a5b9a" stroke-width="2"/><rect x="20" y="929" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="962" class="leaf">A 诊断 → B 兼容与回读</text><text x="34" y="988" class="sub">官方低版流程，禁止盲目加偏移</text><path d="M390,1070 C365.0,1070 365.0,1070 340,1070" fill="none" stroke="#6a5b9a" stroke-width="2"/><rect x="20" y="1033" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="1066" class="leaf">C 锁定会话 → D 写盘保护</text><text x="34" y="1092" class="sub">保留失败记录，D 不作为可用结论</text><path d="M390,1070 C365.0,1070 365.0,1174 340,1174" fill="none" stroke="#6a5b9a" stroke-width="2"/><rect x="20" y="1137" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="34" y="1170" class="leaf">E 移除交接期 READ_VAR</text><text x="34" y="1196" class="sub">保留预检、完成检查与关闭回读</text><path d="M940,640 C980.0,640 980.0,210 1020,210" fill="none" stroke="#357b61" stroke-width="4"/><rect x="1020" y="182" width="200" height="56" rx="9" fill="white" stroke="#357b61" stroke-width="2"/><text x="1040" y="217" class="heading">验证证据</text><path d="M1220,210 C1240.0,210 1240.0,106 1260,106" fill="none" stroke="#357b61" stroke-width="2"/><rect x="1260" y="69" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="102" class="leaf">模型 94 项通过，真实构建成功</text><text x="1274" y="128" class="sub">模型不代表实际 U 盘落盘</text><path d="M1220,210 C1240.0,210 1240.0,210 1260,210" fill="none" stroke="#357b61" stroke-width="2"/><rect x="1260" y="173" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="206" class="leaf">E：56 + 47 = 103 字节</text><text x="1274" y="232" class="sub">表头与第一分钟逐字节回读一致</text><path d="M1220,210 C1240.0,210 1240.0,314 1260,314" fill="none" stroke="#357b61" stroke-width="2"/><rect x="1260" y="277" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="310" class="leaf">暂停 4820ms，有效 59980ms</text><text x="1274" y="336" class="sub">一个文件，仅一次 CREATE</text><path d="M940,640 C980.0,640 980.0,640 1020,640" fill="none" stroke="#9b702a" stroke-width="4"/><rect x="1020" y="612" width="200" height="56" rx="9" fill="white" stroke="#9b702a" stroke-width="2"/><text x="1040" y="647" class="heading">仍有风险</text><path d="M1220,640 C1240.0,640 1240.0,536 1260,536" fill="none" stroke="#9b702a" stroke-width="2"/><rect x="1260" y="499" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="532" class="leaf">原 TXT 已删，多分钟待验</text><text x="1274" y="558" class="sub">未核对 E 电脑原字节及重插</text><path d="M1220,640 C1240.0,640 1240.0,640 1260,640" fill="none" stroke="#9b702a" stroke-width="2"/><rect x="1260" y="603" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="636" class="leaf">写盘窗口 1313ms 暂停采集</text><text x="1274" y="662" class="sub">不能声称无丢滴或性能已达标</text><path d="M1220,640 C1240.0,640 1240.0,744 1260,744" fill="none" stroke="#9b702a" stroke-width="2"/><rect x="1260" y="707" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="740" class="leaf">旧 FAT / 偶发 0x42 / 零进度</text><text x="1274" y="766" class="sub">保护不回滚，结构检查非全盘健康</text><path d="M940,640 C980.0,640 980.0,1070 1020,1070" fill="none" stroke="#426b9f" stroke-width="4"/><rect x="1020" y="1042" width="200" height="56" rx="9" fill="white" stroke="#426b9f" stroke-width="2"/><text x="1040" y="1077" class="heading">正式发布门槛</text><path d="M1220,1070 C1240.0,1070 1240.0,966 1260,966" fill="none" stroke="#426b9f" stroke-width="2"/><rect x="1260" y="929" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="962" class="leaf">至少 3 分钟 + 两次暂停继续</text><text x="1274" y="988" class="sub">旧行保留；复位后下次才建新文件</text><path d="M1220,1070 C1240.0,1070 1240.0,1070 1260,1070" fill="none" stroke="#426b9f" stroke-width="2"/><rect x="1260" y="1033" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="1066" class="leaf">电脑 TXT + 安全弹出重插</text><text x="1274" y="1092" class="sub">字节相符，完整文件系统无新增错</text><path d="M1220,1070 C1240.0,1070 1240.0,1174 1260,1174" fill="none" stroke="#426b9f" stroke-width="2"/><rect x="1260" y="1137" width="320" height="74" rx="7" fill="white" stroke="#ccd7e1"/><text x="1274" y="1170" class="leaf">另验采集精度与控制响应</text><text x="1274" y="1196" class="sub">通过后再决定合入正式 third</text><rect x="660" y="592" width="280" height="96" rx="12" fill="#1c3449"/><text x="800" y="632" text-anchor="middle" fill="white" font-size="25" font-family="Microsoft YaHei" font-weight="600">third 问题与修复</text><text x="800" y="663" text-anchor="middle" fill="#dce9f2" font-size="16" font-family="Microsoft YaHei">2026-10-12 ～ 15 · 当前测试 E</text><text x="30" y="45" class="heading">技术复盘 · 现象 / 根因 / 迭代 / 证据 / 边界 / 验收</text><text x="30" y="1230" class="leaf">结论：E 设备侧一次暂停继续与一分钟写入通过；正式 third 未替换，整体验收仍待完成。</text></svg></div></p>
+<p>导图分为六个分支：用户现象、已确认机制、修复阶段、验证证据、遗留风险、正式发布门槛。图中的“门槛”和“后续方案”表示尚待执行，不代表本轮新增了固件功能。</p>
+<h2 id="section-3">4. 代码层级与实际调用链</h2>
+<pre><code class="language-text">手机命令 / 实体按键
+  → monitor.c：唯一应用状态执行者（待开始 / 测量 / 暂停）
+    → S1.c：检测会话、有效时间、分钟增量、写盘事务、5秒恢复
+      → storage.c：编号、建文件、表头、恢复、追加、关闭与状态缓存
+        → ch376_diag.c：BPB/FAT几何、旧版兼容、写前/完成检查、写后回读
+        → ch376_spi.c：软件SPI、CH376命令、等待中断、字节写供数
+          → CH376 文件系统引擎 → USB U盘 → FAT32目录/FAT/数据簇
+</code></pre>
+<p>串口屏与手机状态是展示通路，不能证明存储通路已经完成。手机本地记录和 U 盘记录按既定需求独立管理；串口工具导出的 CSV 也有自己的来源，不能当作 U 盘文件读取结果。</p>
+<p>在 E 版中，应用状态仍由 monitor 顺序推进；递归互斥量用来串行化 SPI 访问，不会把同步存储流程自动变成异步。<code>S1_storage_start()</code> 仍在打开液滴采集之前执行。因此本轮存储修复并没有同时解决所有开始响应和按键扫描延迟。<a href="#source-E01">[E01]</a><a href="#source-E10">[E10]</a></p>
+<h2 id="section-4">5. 开始延迟与按键无响应</h2>
+<h3 id="heading-194">5.1 阻塞发生在哪里</h3>
+<p>待开始收到 START 后的实际顺序为：</p>
+<pre><code class="language-text">S1_storage_start → storage_retry → 初始化/同步介质/建文件
+返回后才 S1_reset → urine_capture_arm → S1_enter → 测量中
+</code></pre>
+<p>未插盘也会进入同步初始化路径，没有“先开始采集、存储异步准备”的快路径。测量中失败恢复同样在 monitor 内执行，失败后把下一次重试设置为本次结束时刻加 5000ms。<strong>5 秒是重试间隔，不是固定的单次超时。</strong> 若一次存储尝试占 3.5 秒，则可能形成阻塞约 3.5 秒、正常轮询约 5 秒、再阻塞的循环。<a href="#source-E01">[E01]</a></p>
+<h3 id="heading-204">5.2 为什么会漏按键</h3>
+<p>原 key 驱动禁用 GPIO 按键中断，依赖轮询且要求连续 3 次相同电平才改变稳定态；按下回调同步进入应用执行。monitor 的“20ms 循环”实际是本轮工作耗时加延时，而不是保证每 20ms 必然扫描一次。</p>
+<p>因此，整个按下与释放都处于存储等待窗口内时，短按会丢失；如果松手未被扫描，下一次按下也可能被认为一直按着。原 key.c 的主机模型复现了这两种路径。没有证据支持先把消抖次数改小或单纯提高优先级作为根因修复。<a href="#source-E01">[E01]</a></p>
+<h3 id="heading-213">5.3 超时与本轮状态</h3>
+<p>历史 wait 循环明确忙等部分约 5 秒，实际取决于响应、GPIO 与调度开销，不能写成固定 3 秒。100Hz FreeRTOS 下 <code>pdMS_TO_TICKS(1)</code> 为 0，<code>vTaskDelay(0)</code> 不等于睡眠 1ms。手机命令还可能因执行前截止时间及快照陈旧而表现为不可操作。这些是既有调查结论，不是本次新测量。</p>
+<p>E 现场开始准备文件约 1.86 秒、第一分钟写盘事务约 1313ms，仍表明同步路径与诊断成本存在。异步存储、独立按键扫描、单调时间超时和诊断日志精简都仍是后续事项。<a href="#source-E01">[E01]</a><a href="#source-E09">[E09]</a></p>
+<h2 id="section-5">6. “写盘成功但没有文件”的定位过程</h2>
+<h3 id="heading-225">6.1 最初必须区分“日志停了”和“任务卡死”</h3>
+<p>second 与早期 third 的 15 个关键低层函数去掉注释和日志后逻辑一致；明显差异在文件生命周期、故障重试、日志屏蔽及外围任务。早期 third 在事务内同时屏蔽 CH376 和 storage 日志，成功时缺少单独的完成提示。用户后来确认手机和串口屏继续实时更新，因此单看最后一行“第 1 分钟写盘”不足以证明程序卡死。<a href="#source-E02">[E02]</a></p>
+<p>2026-10-12 日志副本显示：建文件事务约 510ms，第一分钟事务约 269ms；表头 56 字节、分钟行 47 字节已完整提供，写／关命令均返回成功。问题已从“是否发送数据”收敛到“数据到底写在哪里”。这些耗时只属于对应版本和当次日志，不能代替 E 版耗时。<a href="#source-E03">[E03]</a></p>
+<h3 id="heading-234">6.2 CSV 是理论记录，不是落盘证据</h3>
+<p>已检查串口工具：它从“进入临界区”日志解析 RecordRow，导出解析列表为 CSV。解析发生在写入结果之前，不读取 U 盘。因此 CSV 中有 <code>5.5ml / 330.0ml/h</code>，只能说明日志中出现这条待写记录，不能证明电脑可见 TXT 已保存。<a href="#source-E03">[E03]</a></p>
+<h3 id="heading-240">6.3 FAT32 地址计算</h3>
+<p>本盘关键参数如下。下表地址统一使用<strong>整盘绝对 LBA</strong>，512 字节为一个扇区。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th style="text-align:right">数值</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分区起点 P</td>
+<td style="text-align:right">64</td>
+<td>MBR；32,768 / 512</td>
+</tr>
+<tr>
+<td>保留区 R</td>
+<td style="text-align:right">1056 = 0x0420</td>
+<td>BPB 两字节 <code>20 04</code>，小端</td>
+</tr>
+<tr>
+<td>FAT 份数 N</td>
+<td style="text-align:right">2</td>
+<td>BPB</td>
+</tr>
+<tr>
+<td>每份 FAT 长度 F</td>
+<td style="text-align:right">7664 扇区</td>
+<td>BPB</td>
+</tr>
+<tr>
+<td>每簇 S</td>
+<td style="text-align:right">8 扇区</td>
+<td>BPB</td>
+</tr>
+<tr>
+<td>根簇</td>
+<td style="text-align:right">2</td>
+<td>BPB</td>
+</tr>
+<tr>
+<td>FAT1 起点</td>
+<td style="text-align:right">1120</td>
+<td>P + R</td>
+</tr>
+<tr>
+<td>FAT2 起点／终点</td>
+<td style="text-align:right">8784～16447</td>
+<td>P + R + F，长度 F</td>
+</tr>
+<tr>
+<td>正确数据区 D</td>
+<td style="text-align:right">16448</td>
+<td>P + R + N×F</td>
+</tr>
+<tr>
+<td>旧芯片内部数据区</td>
+<td style="text-align:right">15424</td>
+<td>A 现场内部变量 0x50</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">正确数据起点 = 64 + 1056 + 2 × 7664 = 16448
+若只取保留区低字节 0x20：64 + 32 + 2 × 7664 = 15424
+偏差 = 15424 − 16448 = −1024 扇区 = −524288 字节
+簇 C 的正确首扇区 = 16448 + (C − 2) × 8
+</code></pre>
+<p>1056 本身是合法保留区值；不能为了适配芯片而先篡改 BPB。不能把分区内 LBA 16384 与整盘绝对 LBA 16448 混用。<a href="#source-E03">[E03]</a><a href="#source-E04">[E04]</a></p>
+<h3 id="heading-377">6.4 从算术假设到实物证据</h3>
+<p>10月12日电脑读到了位于错误 FAT2 区域的目录项和完整 103 字节文本：正常根目录没有 TXT，并非数据从未出现。此时“保留区高字节未参与芯片挂载基址”只是优先假设，尚不能指定芯片内部原因。</p>
+<p>A 版补充了 CH376 物理只读 MBR/BPB、内部几何和文件定位日志。实物读取主／备份 BPB 均为 <code>20 04</code>，ESP32 的小端组合正确；0x50 在额外物理探针前已为 15424，复读、重挂载后仍一致。U0000003 首簇 8 的正确位置应为 16496，实际定位及电脑原始文本均为 15472，恰好提前 1024 扇区。该偏差在 Wi-Fi 初始化前就出现，不能把 Wi-Fi 竞争作为这条错误基址证据的充分解释。<a href="#source-E04">[E04]</a></p>
+<h3 id="heading-386">6.5 B 版如何修复</h3>
+<p>参考保存的官方 EVT 低版本流程：芯片版本小于 0x43、文件系统未 READY 时，先空文件名打开根目录，再读取 8 位变量 0xCF，必要时以 <code>0xCF &lt;&lt; 8</code> 调整芯片内部 0x4C 与 0x50，并清 0x70。实现增加 BPB、高字节、差值、内部基准和溢出约束；条件不吻合则拒绝写盘。已正确或 READY 时不叠加补偿。<a href="#source-E05">[E05]</a></p>
+<p>B 现场实际得到 0xCF=04，修正量 1024；0x4C 从 64 变为 1088，0x50 修正为 16448。这里 <strong>0x4C 是兼容后的厂商内部基准，不能继续强制等同 MBR 的 64</strong>；更不能对所有物理读写地址统一加 1024。</p>
+<p>B 实机的 U0000002 最终首簇 264、位置 18544，满足 <code>16448 + (264−2)×8</code>；电脑读取实际文件为 103 字节，与表头和一分钟 <code>9.5ml / 570.0ml/h</code> 一致。这个结果证明该次错位寻址已纠正，但同轮还有文件上下文和 FAT 异常，整体未通过。<a href="#source-E06">[E06]</a></p>
+<h2 id="section-6">7. 重复新建与历史覆盖风险：C 版修复</h2>
+<h3 id="heading-401">7.1 正常业务语义</h3>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>文件预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>待开始 → 开始</td>
+<td>建立本次新检测的文件</td>
+</tr>
+<tr>
+<td>测量中重复 START</td>
+<td>幂等，不新建</td>
+</tr>
+<tr>
+<td>暂停 → 继续</td>
+<td>沿用同一会话、同一文件，暂停时间不累计</td>
+</tr>
+<tr>
+<td>检测复位 → 下次开始</td>
+<td>新检测，应分配新文件</td>
+</tr>
+</tbody>
+</table>
+<p>正常暂停继续代码原本就不调用新建入口。真正的缺陷是异常恢复可能在继续之后执行，使表象看起来像“按继续就建文件”。不能把复位后的新文件与同次检测的重复建文件混为一谈。<a href="#source-E10">[E10]</a></p>
+<h3 id="heading-453">7.2 两条已确认的缺陷路径</h3>
+<p><strong>路径一：创建发生了，会话身份却没返回。</strong> 旧逻辑只在创建、表头、关闭和校验全部成功后把候选编号交给 S1。若真实文件已建立但回读失败，上层标识仍为空；5 秒后的重试再次选号，造成同一次检测出现多个编号。B 日志中 U1 回读失败后重新分配 U2，发生在第一次暂停之前。</p>
+<p><strong>路径二：恢复／追加遇到 0x42 就现场创建。</strong> B 日志中已知 U2 打开返回 0x42 后，执行 FILE_CREATE，首簇由 8 变为 264。FILE_CREATE 具有同名覆盖语义；即使文件名没变，也不能证明历史行保留。0x42 是该次芯片访问结果，不能在已知会话上下文中直接当作安全重建授权。<a href="#source-E06">[E06]</a><a href="#source-E10">[E10]</a></p>
+<h3 id="heading-462">7.3 C 版更改及取舍</h3>
+<p>编号在第一次 CREATE 之前写入会话缓冲，同时推进下一编号。创建回复、表头、关闭或回读失败均保留该身份；之后只恢复同一文件。恢复和追加遇到 0x42 明确报错，禁止再次 CREATE 或写表头；短文件和损坏表头也不自动修补覆盖。<a href="#source-E07">[E07]</a></p>
+<p>代价是：文件确实缺失或首次创建结果不确定且表头不完整时，会继续计量并提示未保存，而不会冒险重建。缺失分钟不补写，未引入离线缓存，也未实现跨硬件重启会话恢复。首次新检测的候选判空仍依赖 OPEN 结果，若底层误报历史文件不存在，初次创建的绝对防覆盖保证仍不成立。</p>
+<p>会话联合回归对旧代码 14 项中失败 10 项，C 后 14 项通过。C 现场只锁定 U3，34 次失败恢复均未换号或重建，说明会话保护生效；同时首次表头已出现簇 0 错写，说明会话修复不能替代底层保护。<a href="#source-E07">[E07]</a><a href="#source-E11">[E11]</a></p>
+<h2 id="section-7">8. 文件损坏与非法首簇：D 版保护</h2>
+<h3 id="heading-477">8.1 损坏不是资源管理器未刷新</h3>
+<p>C 现场普通目录显示 U0000003.TXT 长 56 字节，原始目录项首簇为 0；Windows 原生 ReadFile 返回 1392。非空文件使用 FAT 保留簇号 0 不合法。日志显示首簇／当前簇均为 0，读写 LBA=16432；电脑原始读取该扇区前 56 字节确实是本次 UTF-8 表头。<a href="#source-E11">[E11]</a></p>
+<pre><code class="language-text">非法目标 = 16448 + (0 − 2) × 8 = 16432
+16432 位于 FAT2 范围 8784～16447 内
+</code></pre>
+<p>该次两份 FAT 的新增差异索引 7648 对应绝对 LBA 16432，形成日志、目录项、公式与真实扇区的相互印证。FAT[0] 此时为 0x0FFFFFFF，而 BPB 介质 F8 要求低 28 位为 0x0FFFFFF8；前一轮它已经异常为 0。两轮间还有其他操作，所以不能把 FAT[0] 每次变化唯一归因于一条代码，更不能仅凭此认定闪存物理坏。<a href="#source-E11">[E11]</a></p>
+<h3 id="heading-487">8.2 D 增加的防线</h3>
+<ol>
+<li>创建／恢复前读取各份 FAT 首扇区，核对保留项 0/1 与首扇区副本一致性；BPB 缓存有效也重新检查 FAT。</li>
+<li>请求前校验数据区、目录 LBA、文件上下文和范围；空文件、整簇 EOF 尚待分配的状态不能被误判为已损坏。</li>
+<li>写完 0x14 后检查持久首簇、长度和指针；完成后的临时缓冲可能切回 FAT，不能强制它仍是数据页。</li>
+<li>写入故障锁存；FILE_CLOSE 发送参数 0，不把新的长度更新进异常目录项。</li>
+<li>关闭后重新挂载、重新打开，核对准确总长和新增段内容。<a href="#source-E12">[E12]</a></li>
+</ol>
+<p>这些措施不写物理修复扇区、不格式化、不恢复旧文件。FAT 首扇区检查也不等于完整 FAT 表或所有簇链检查；事后验证不具备回滚已经发生写入的能力。</p>
+<h2 id="section-8">9. D 版空内容：诊断探针本身造成干扰</h2>
+<h3 id="heading-523">9.1 现场把问题定位到表头供数之前</h3>
+<p>D 实测同名日志新副本为 274653 字节，SHA256 <code>60E4A345026A8AED3C5004864B2083AE5FF15BA97DE4D6E82E9D959F0725EB58</code>。电脑 U1 文件仅 1 字节 <code>2E</code>（句点），没有正常表头。这个 1 字节的形成来源无法仅凭现有日志确定，不应擅自补出解释。<a href="#source-E08">[E08]</a></p>
+<p>14394ms，BYTE_WRITE 返回 0x1E。D 新增的 CanFeed 在这一交接窗口读取 0x60/0x64 等内部变量，读到 <code>46 49 4C 45</code>（FILE）和 <code>30 30 30 31</code>（0001），无法作为稳定的簇号。保护中止，<strong>该次没有发 WR_REQ_DATA，也没有发 WR_GO，56 字节表头未被提供</strong>。所以“再等一分钟”或调整文本编码无法解决这一轮空内容。<a href="#source-E08">[E08]</a></p>
+<h3 id="heading-532">9.2 为什么模型没提前发现</h3>
+<p>D 的旧模型把内部变量当作静态寄存器，并以简化的布尔 CanFeed 桩代替真实诊断实现，没有覆盖 0x1E 交接期窗口映射临时内容的行为。于是“保护模型全过”只证明了模型假设内的逻辑，并未证明探针插入点安全。这是测试覆盖缺口，不能把 D 的通过数当作真实硬件可用性的保证。</p>
+<h3 id="heading-538">9.3 E 版修复原则</h3>
+<pre><code class="language-text">请求前：FAT/几何/文件状态检查
+  → BYTE_WRITE 0x3C，发送长度
+  → 状态 0x1E：仅说明芯片请求本批数据
+  → WR_REQ_DATA 0x2D，读取块长并供数
+  → BYTE_WR_GO 0x3D
+  → 若仍 0x1E，继续供下一批
+  → 最终 0x14 且数据供完：检查持久字段
+  → FILE_CLOSE → 重挂载 → OPEN → 精确长度/逐字节回读
+</code></pre>
+<p>E 删除 CanFeed API 和写循环中的调用，不在 0x1E→供数→继续写入之间插入 READ_VAR 或其他诊断 SPI 命令。保留请求前检查、完成检查、异常关闭及回读。C 的会话规则和 Wi-Fi 相关文件未因这轮修复改变。<a href="#source-E08">[E08]</a></p>
+<p>新增有状态模型联合真实 diag.c 与 BYTE_WRITE_DATA，模拟 FILE 窗口：D 对四项测试有三项失败，E 四项全部通过，56 字节完整表头供数一致。该模型验证代码和供数轨迹，仍不等于 U 盘物理落盘。<a href="#source-E08">[E08]</a></p>
+<h2 id="section-9">10. 写盘事务、Wi-Fi 和液滴采集</h2>
+<p>按用户确认，10月12日已把新建／恢复／分钟写盘放入统一事务：递归互斥串行化 SPI，暂时暂停液滴 GPIO 中断、串口屏推送和手机新状态推送，退出恢复原状态与日志等级。<strong>这不是全局关闭 CPU 中断或 FreeRTOS 调度，也没有主动关闭 Wi-Fi AP。</strong><a href="#source-E13">[E13]</a></p>
+<p>手机握手、控制 ACK 和 TCP 连接保留；已经排队的帧、网络底层也可能继续。“暂停推送”不是无线静默，更不是断开 Wi-Fi。测量已暂停或待开始时，事务退出不会错误重新开启采集。</p>
+<p>15 项控制与保护模型覆盖嵌套、失败出口、采集原状态恢复和手机推送竞争。它们不能证明真实网络永不断联，也不能证明关闭液滴中断期间不丢滴。E 现场 1313ms 的事务含诊断／回读，窗口内液滴可能未被计入；性能和计量连续性必须单独验收。该事务对齐是运行条件调整，不是已证实的 1024 扇区错位根因修复。</p>
+<h2 id="section-10">11. 修复与实测时间线</h2>
+<table>
+<thead>
+<tr>
+<th>日期／阶段</th>
+<th>本阶段主要动作</th>
+<th>验证结果和后续发现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10-12 控制调查</td>
+<td>定位 monitor 内同步存储与轮询按键的耦合</td>
+<td>代码／按键模型确认，未实施异步架构</td>
+</tr>
+<tr>
+<td>10-12 second 对比</td>
+<td>对比 15 个核心函数与运行环境</td>
+<td>核心逻辑一致，不能凭 second 可用就认定 third 一定是 Wi-Fi 干扰</td>
+</tr>
+<tr>
+<td>10-12 事务保护</td>
+<td>暂停采集／屏幕／手机新状态，保留连接</td>
+<td>15 项模型通过，后续错位写盘仍存在</td>
+</tr>
+<tr>
+<td>10-12 日志副本</td>
+<td>独立备份、打印供数与阶段耗时</td>
+<td>无卡死证据，真实目录和文本在 FAT2；CSV 只是日志解析</td>
+</tr>
+<tr>
+<td>10-14 介质恢复</td>
+<td>分区完整镜像、授权 CHKDSK、恢复可识别文本</td>
+<td>当时 Windows 检查无错；并未修复设备端错误基址</td>
+</tr>
+<tr>
+<td>10-14 A</td>
+<td>MBR/BPB、内部变量、文件 LBA 对照</td>
+<td>错误数据基址 15424；主／备份 BPB 与电脑正确值为 16448</td>
+</tr>
+<tr>
+<td>10-14 B</td>
+<td>官方旧版兼容＋门控＋关闭重挂载回读</td>
+<td>一次电脑文件 103 字节相符；仍有首簇读回不一致、0x42 后重建和 FAT 异常</td>
+</tr>
+<tr>
+<td>10-15 C</td>
+<td>先锁定会话身份，恢复／追加禁止 CREATE</td>
+<td>会话 14 项通过；现场不换号，但 U3 首簇 0、表头误写 FAT2</td>
+</tr>
+<tr>
+<td>10-15 D</td>
+<td>FAT 预检、分阶段写盘保护、异常关闭</td>
+<td>94 项模型通过；实机 0x1E 插探针误拦，表头未供数</td>
+</tr>
+<tr>
+<td>10-15 E</td>
+<td>删除交接期探针，新增有状态联合握手模型</td>
+<td>94 项模型通过、ESP32-S3 构建成功；最新一次设备侧一分钟验证通过</td>
+</tr>
+</tbody>
+</table>
+<p>A 和早期日志副本主要用于诊断；B～E 包含功能性修复或保护，不能统称“只加打印”。D 失败过程应保留，不可只展示最终成功日志。</p>
+<h2 id="section-11">12. 最新 E 版验收数据</h2>
+<h3 id="heading-696">12.1 软件回归和构建</h3>
+<table>
+<thead>
+<tr>
+<th>套件</th>
+<th style="text-align:right">通过项数</th>
+<th>证明范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>地址／兼容／回读</td>
+<td style="text-align:right">41</td>
+<td>BPB、范围、兼容及回读模型</td>
+</tr>
+<tr>
+<td>字节写／等待</td>
+<td style="text-align:right">12</td>
+<td>实际函数与返回状态场景</td>
+</tr>
+<tr>
+<td>控制／写盘保护</td>
+<td style="text-align:right">15</td>
+<td>事务嵌套、恢复、采集／推送状态</td>
+</tr>
+<tr>
+<td>检测会话联合</td>
+<td style="text-align:right">14</td>
+<td>实际 monitor/S1/storage 的会话生命周期</td>
+</tr>
+<tr>
+<td>存储服务</td>
+<td style="text-align:right">8</td>
+<td>创建、恢复、追加及验证契约</td>
+</tr>
+<tr>
+<td>有状态交接</td>
+<td style="text-align:right">4</td>
+<td>实际诊断与写循环联合，覆盖 D 现场缺口</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td style="text-align:right"><strong>94</strong></td>
+<td><strong>模型通过，不替代硬件／持久化／计量验收</strong></td>
+</tr>
+</tbody>
+</table>
+<p>E 应用 <code>third.bin</code> 为 847536 字节，SHA256：</p>
+<pre><code class="language-text">CF933491B7A1D11C145EB29A2B2FABA391C628E41E07DEF36D863ECC924A6129
+</code></pre>
+<p>对应工程已保存匹配的 bootloader、分区表及应用；应使用该工程的烧录参数，不混用旧 third 镜像。实际下载端口须核对，不能因为 COM21 曾是日志口就直接当作 ESP32 下载口。<a href="#source-E08">[E08]</a></p>
+<h3 id="heading-800">12.2 192927 实机日志核对</h3>
+<p>日志 138944 字节，SHA256：</p>
+<pre><code class="language-text">83594BDD4B5FB78731CF3757A58BD2601356F02FDEFB668AC1A6F1B3AA0D3510
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>日志结果</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本</td>
+<td>20261015-E</td>
+<td>与 E 匹配</td>
+</tr>
+<tr>
+<td>文件生命周期</td>
+<td>仅 1 次 CREATE，始终 U0000001.TXT</td>
+<td>本次未换号／同名重建</td>
+</tr>
+<tr>
+<td>表头</td>
+<td>发送 56 字节；关闭重挂载后准确 56，逐字节一致</td>
+<td>设备侧通过</td>
+</tr>
+<tr>
+<td>第一分钟</td>
+<td><code>00:01:00  7.0ml  420.0ml/h</code></td>
+<td>7.0×60=420.0</td>
+</tr>
+<tr>
+<td>滴数与体积</td>
+<td>屏幕 14 滴，按 0.5ml/滴为 7.0ml</td>
+<td>本次算术一致，不等于实际体积校准</td>
+</tr>
+<tr>
+<td>追加</td>
+<td>从偏移 56 加 47 字节，总长 103</td>
+<td>设备重开回读新增段一致</td>
+</tr>
+<tr>
+<td>首簇及位置</td>
+<td>首簇 6，数据 LBA 16480</td>
+<td>16448+(6−2)×8，位于数据区</td>
+</tr>
+<tr>
+<td>暂停继续</td>
+<td>24204→29024ms，暂停 4820ms</td>
+<td>同一文件，继续不建新文件</td>
+</tr>
+<tr>
+<td>一分钟计时</td>
+<td>开始 8674ms，触发 73474ms</td>
+<td>73474−8674−4820=59980ms，符合20ms粒度</td>
+</tr>
+<tr>
+<td>错误</td>
+<td>无 E 级错误、无本次分钟跳过</td>
+<td>仅限本日志窗口</td>
+</tr>
+<tr>
+<td>网络</td>
+<td>AP/DHCP 启动，192.168.4.1</td>
+<td>证明启动，未做覆盖距离或长稳测试</td>
+</tr>
+</tbody>
+</table>
+<p>13 项日志条件全部满足。日志只到约 1 分 08 秒，用户已删除原 TXT，<strong>E 本次没有电脑文件原字节核对、重插持久性、多分钟历史行及完整 FAT 验收</strong>。B 以前的电脑 103 字节验证不能代替 E 的最终验收。<a href="#source-E09">[E09]</a></p>
+<h2 id="section-12">13. 遗留风险和后续改进</h2>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>遗留事项</th>
+<th>下一步证据／处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>发布前必验</td>
+<td>E 多分钟、电脑原文件、重插及文件系统一致性</td>
+<td>按下一节完整复测，不以模型或设备回读替代</td>
+</tr>
+<tr>
+<td>发布前必验</td>
+<td>写盘暂停液滴中断可能漏计</td>
+<td>用稳定脉冲源／已知滴数对照写盘窗口，再决定采集与存储解耦</td>
+</tr>
+<tr>
+<td>高</td>
+<td>monitor 同步存储使控制／按键扫描延迟</td>
+<td>独立单属主存储任务、按键只投事件、命令完成时间戳；目前未实施</td>
+</tr>
+<tr>
+<td>高</td>
+<td>已有文件 OPEN 偶发 0x42、首簇曾 7→263</td>
+<td>保留原始错误，不通过自动重建掩盖；故障注入与实机连续访问验证</td>
+</tr>
+<tr>
+<td>高</td>
+<td>旧盘可能仍有历史 FAT 损坏</td>
+<td>先保留原始证据和备份，再单独恢复；首扇区预检不能宣称全表健康</td>
+</tr>
+<tr>
+<td>中</td>
+<td>单次异常块长／零进度</td>
+<td>当前写循环遇零或超量请求有告警，未整体改写原供数算法；若持续0x1E且零进度，仍须专门做有界退出复核，E现场未出现此模式</td>
+</tr>
+<tr>
+<td>中</td>
+<td>未保存分钟无补写、末尾不足一分钟不单独落盘</td>
+<td>当前分钟编号和增量基准已消费；如需补写或尾段记录，应另定协议与缓存需求</td>
+</tr>
+<tr>
+<td>中</td>
+<td>新会话查重依赖芯片 OPEN</td>
+<td>底层误报历史文件缺失时仍有首次创建冲突边界，不能承诺绝对防覆盖</td>
+</tr>
+<tr>
+<td>中</td>
+<td>诊断体积／耗时</td>
+<td>用精简后的单独版本重新评估，不能仅关闭日志就宣称性能问题解决</td>
+</tr>
+</tbody>
+</table>
+<p>物理 Flash 16MB 与镜像声明 2MB 的提示已出现；当前镜像在声明分区内，现有日志没有显示它导致写盘故障，不应无依据改分区。部分历史源码注释滞后，例如初始化旧注释仍写挂载失败可继续，但当前实际分支已经返回失败；维护判断以执行代码和测试为准，不把旧注释当行为保证。</p>
+<p>后续建议按三步推进：先完成 E 的存储闭环验收，再以单独变更处理控制与采集解耦，最后裁剪诊断并重新做性能回归。本报告没有实施这些架构变更。</p>
+<h2 id="section-13">14. 下一轮最小闭环验收方案</h2>
+<h3 id="heading-1076">14.1 准备与执行</h3>
+<ol>
+<li>保留当前原始日志和 U 盘文件；确认烧录的是 E 及匹配镜像，记录 SHA256。不要先删除输出文件。</li>
+<li>上电保存完整日志：版本 0x42、MBR/BPB、FAT 预检、兼容前后基址。数据区差值应为 0；任何预检拒写均先留证，不通过反复开始或格式化掩盖。</li>
+<li>开始一条新检测，有效测量至少 3 分钟，中间暂停继续两次；记录每次动作时间、文件名、CREATE 次数、逐分钟新增长度和回读结果。</li>
+<li>检测复位并等待相关事务完成，再开始第二条检测。第一条应保持原名和历史行，第二条获得不同编号；暂停继续不应创建第三条文件。</li>
+<li>使用业务复位、等待写盘和回读全部结束后转接电脑。保存两个原始 TXT、目录列表及完整串口日志，再安全弹出和重新插入核对；必要的文件系统检查先只读留证。</li>
+</ol>
+<h3 id="heading-1106">14.2 通过标准</h3>
+<table>
+<thead>
+<tr>
+<th>检查对象</th>
+<th>通过要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>会话</td>
+<td>第一条仅首次开始 CREATE；暂停继续同标识；复位后才出现第二会话</td>
+</tr>
+<tr>
+<td>每分钟追加</td>
+<td>偏移等于上一轮准确总长；旧行仍在；新增内容与当分钟日志一致</td>
+</tr>
+<tr>
+<td>字节长度</td>
+<td>若表头56、每行47，则三分钟应为197；实际按 <code>56 + Σ每行真实字节数</code> 计算，不能固定所有行永远47</td>
+</tr>
+<tr>
+<td>电脑内容</td>
+<td>UTF-8 表头及三条历史行可正常读取，无1392；原字节与请求内容对应</td>
+</tr>
+<tr>
+<td>持久性</td>
+<td>安全弹出／重插后文件名、内容、长度不变</td>
+</tr>
+<tr>
+<td>文件系统</td>
+<td>无新增FAT差异、丢失簇或非法目录项；区分旧损坏与本次新增</td>
+</tr>
+<tr>
+<td>采集和控制</td>
+<td>另测写盘窗口滴数、首次开始和短按响应；存储正确不等于这些已合格</td>
+</tr>
+</tbody>
+</table>
+<p>现有文件是三列文本（检测有效时长、分钟尿量、分钟平均流速），不是完整的绝对年月日时间序列，也不是 APP 全部分钟详情字段的导出。不要把手机界面的需求直接当作 U 盘现有格式。</p>
+<p>仅当以上对应项有真实结果，才考虑把测试修复合入正式 third。</p>
+<h2 id="section-14">15. 固件发布与回退记录</h2>
+<p>当前正式 third 保持 101 文件基线；测试 E 的应用哈希见第12节。C 应用哈希为 <code>136845574616991B93599046CBE1B85FF0A13B65E856EA520ABA9262D91B75E1</code>；D 为 <code>9EC4672D25A6C7DD8EF467EAFB88B3E0EBA40789BB8DDBF49C8BBCD2F09878AF</code>。这些旧镜像用于追溯，不推荐把失败阶段重新作为正常测量版本。<a href="#source-E07">[E07]</a><a href="#source-E12">[E12]</a></p>
+<p>回退应同时选择对应源码、bootloader、分区表、应用及 flash_args，按清单核对。固件回退不回滚 U 盘 FAT 或历史文件，不能把旧固件烧回去当作介质修复。实际再次烧录、修盘和正式发布不属于本报告操作。</p>
+<p>U 盘授权恢复前保存了完整分区镜像，大小 4,026,499,072 字节，SHA256 <code>2B04438A9499DFC53FF8EC3AA52EB6FB61EC2887EC526218C5502B912C81F419</code>。它包含分区，不包含 MBR；MBR 参数另有记录。10月14日修复后当时两份 FAT 一致、只读 CHKDSK 无错，恢复 6 个可识别文本；这不证明后续设备测试没有再次损坏，也不证明全盘闪存物理健康。<a href="#source-E14">[E14]</a></p>
+<p>该约4GB镜像保留本机 <code>F:\ESP32\niaio\outputs\usb-repair-20261014\General-UDisk-H-partition-before-repair.img</code>，未纳入普通 Git 上传；仓库保存哈希、关键扇区及恢复报告。</p>
+<h2 id="section-15">16. 证据索引与复核入口</h2>
+<p>以下链接对应已归档材料。历史报告中的“未实机”指该报告生成时的阶段状态；最新结论应结合 E09 阅读。历史脚本可能依赖原目录布局，不能把介质修复脚本当普通回归直接运行。本次没有重跑固件模型，引用的是已保存验证记录。</p>
+<ul>
+<li><strong id="source-E00">E00</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/docs/testing/CH376-20261012-15.md">测试归档总索引</a>、<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/ARCHIVE_MANIFEST.json">1181份材料清单</a>。</li>
+<li><strong id="source-E01">E01</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/docs/testing/third-report-20261015/evidence/control-latency-diagnosis-20261012.md">开始延迟与按键调查</a>。</li>
+<li><strong id="source-E02">E02</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/ch376-disk-audit-20261012/second-third-comparison.md">second 与 third 对比</a>。</li>
+<li><strong id="source-E03">E03</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/ch376-disk-audit-20261012/after-logtest-212834/report.md">10月12日21:28日志与介质对照</a>。</li>
+<li><strong id="source-E04">E04</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/ch376-disk-audit-20261014/after-address-A-104412/report.md">A版错误地址实物证据</a>。</li>
+<li><strong id="source-E05">E05</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-compat-validation-20261014/README.md">B兼容处理说明</a>。</li>
+<li><strong id="source-E06">E06</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-acceptance-20261014/report.md">B部分通过、整体未过验收</a>。</li>
+<li><strong id="source-E07">E07</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-session-fix-20261015/report.md">C会话修复记录</a>。</li>
+<li><strong id="source-E08">E08</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-handshake-fix-20261015/report.md">E握手修复报告</a>、<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-handshake-fix-20261015/verification.json">94项模型与构建记录</a>。</li>
+<li><strong id="source-E09">E09</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-e-log-acceptance-20261015/report.md">最新E一分钟日志验收</a>、<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-e-log-acceptance-20261015/result.json">机器核对结果</a>。</li>
+<li><strong id="source-E10">E10</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/start-file-analysis-20261015/report.md">重复文件代码路径分析</a>。</li>
+<li><strong id="source-E11">E11</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-corruption-20261015/report.md">C文件损坏与FAT2误写调查</a>。</li>
+<li><strong id="source-E12">E12</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-cluster-fix-20261015/report.md">D保护候选及边界</a>。</li>
+<li><strong id="source-E13">E13</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/storage-write-guard-20261012/README.md">事务保护记录</a>。</li>
+<li><strong id="source-E14">E14</strong>：<a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/usb-repair-20261014/repair-report.md">U盘备份及授权修复报告</a>。</li>
+</ul>
+<p>当前 E 源码定位：</p>
+<table>
+<thead>
+<tr>
+<th>文件与入口</th>
+<th>核对事项</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/third_logtest_20261012/main/app/monitor/monitor.c">monitor.c</a>，约195/224行</td>
+<td>命令执行、开始先准备文件、暂停继续和复位语义</td>
+</tr>
+<tr>
+<td><a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/third_logtest_20261012/main/app/S1/S1.c">S1.c</a>，75/193/268行</td>
+<td>事务保护、分钟增量、写盘结果和5秒恢复</td>
+</tr>
+<tr>
+<td><a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/third_logtest_20261012/main/service/storage/storage.c">storage.c</a>，213/275/309行</td>
+<td>创建前锁定编号、恢复与追加禁止CREATE</td>
+</tr>
+<tr>
+<td><a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/third_logtest_20261012/main/driver/ch376/ch376_diag.c">ch376_diag.c</a>，139/263/316/343/383行</td>
+<td>FAT预检、兼容、请求前／完成检查、重挂载回读</td>
+</tr>
+<tr>
+<td><a href="https://github.com/TELE-nwj/urinalysis/blob/codex/ch376-test-records-20261015/third_logtest_20261012/main/driver/ch376/ch376_spi.c">ch376_spi.c</a>，617/674行</td>
+<td>无CanFeed的供数握手、异常关闭参数</td>
+</tr>
+</tbody>
+</table>
+<p>厂商参考的本地证据保存于 <a href="https://github.com/TELE-nwj/urinalysis/tree/codex/ch376-test-records-20261015/test-records/ch376/2026-10-12_15/outputs/third-address-log-20261014">A版诊断归档</a>，包括手册提取与 EVT 文件；上游入口：<a href="https://www.wch-ic.com/downloads/CH376DS2_PDF.html">CH376手册（二）</a>、<a href="https://github.com/changleo828/BOSSEN_USB_FOR_WT/blob/master/Documents/EVT/EXAM/FILE_SYS.C">FILE_SYS.C镜像</a>。兼容处理依据归档时保存的厂商手册与 EVT 副本，保留来源以供复核。</p>
+<footer>本页为已归档证据的技术复盘；未重新执行硬件操作。建议同时保留 Markdown、SVG 与原始测试材料。</footer></main><script>document.querySelectorAll('table').forEach(t=>{const w=document.createElement('div');w.className='table-scroll';t.before(w);w.append(t)});let scale=1;const diagram=document.querySelector('.map svg');function size(){diagram.style.width=(scale*100)+'%'}document.getElementById('zoomin').onclick=()=>{scale=Math.min(4,scale+.5);size()};document.getElementById('zoomout').onclick=()=>{scale=Math.max(.5,scale-.5);size()};document.getElementById('zoomfit').onclick=()=>{scale=1;size()};</script></body></html>
