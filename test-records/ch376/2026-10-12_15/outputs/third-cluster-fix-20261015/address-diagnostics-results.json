@@ -1,0 +1,227 @@
+[
+  {
+    "case": "test_bpb_high_byte_and_absolute_lba",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_bad_signature",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_bad_cluster_size",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_overflow",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_read_eight_chunks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_read_partial_failure",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_zero_progress_bounded",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_oversize_consumed_rejected",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_var32_little_endian",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_lba",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_eof_is_valid",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_bad_length",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_probe_remount_failure_stops",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bad_boot_remount_no_fake_geometry",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_cached_geometry_still_checks_fat",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_reset_invalidates_geometry",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_correction_and_no_repeat",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_high_byte_mismatch_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_ready_wrong_base_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_new_chip_no_legacy_writes",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_root_open_failure_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bad_data_base_blocks_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_directory_in_fat_blocks_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_valid_directory_allows_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_bytes_match",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_content_mismatch",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_zero_length_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_closes_without_update",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_partial_correction_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_zero_reserved_entry_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_wrong_media_ff_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_reserved_one_invalid_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_first_sector_mismatch_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_read_error_blocks_and_remounts",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_nonempty_zero_start_cluster_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_nonempty_target_in_fat_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_nonempty_cluster_out_of_volume_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_data_page_valid_target_allows_feed",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_zero_cluster_request_latches_fault",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_fat_buffer_blocks_even_if_directory_valid",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_wrong_cluster_buffer_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_empty_new_file_before_allocation_is_allowed",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_finish_allows_nondata_buffer_after_cluster_eof",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_finish_zero_cluster_rejects_directory_update",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_append_allows_aligned_eof_before_allocation",
+    "passed": true,
+    "failure_line": 0
+  }
+]

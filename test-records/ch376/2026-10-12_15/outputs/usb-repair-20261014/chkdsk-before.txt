@@ -1,0 +1,28 @@
+The type of the file system is FAT32.
+Access is denied.
+
+The volume is in use by another process. Chkdsk
+might report errors when no corruption is present.
+Volume Serial Number is D079-BDB0
+Windows is verifying files and folders...
+0 percent completed.                  
+10 percent completed..                 
+20 percent completed...                
+30 percent completed....               
+100 percent completed.....              
+File and folder verification is complete.
+Windows found errors on the disk, but will not fix them
+because disk checking was run without the /F (fix) parameter.
+Convert lost chains to files (Y/N)? Convert lost chains to files (Y/N)? 24576 bytes in 6 recoverable files.
+
+Windows has checked the file system and found problems.
+Run CHKDSK with the /F (fix) option to correct these.
+
+4,018,110,464 bytes total disk space.
+        4,096 bytes in 1 hidden files.
+        8,192 bytes in 2 files.
+4,018,065,408 bytes available on disk.
+
+        4,096 bytes in each allocation unit.
+      980,984 total allocation units on disk.
+      980,973 allocation units available on disk.

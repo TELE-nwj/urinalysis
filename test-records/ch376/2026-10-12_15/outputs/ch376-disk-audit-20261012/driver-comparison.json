@@ -1,0 +1,17 @@
+{
+  "CH376_PORT_INIT": true,
+  "ch376_spi_OutByte": true,
+  "ch376_spi_InByte": true,
+  "CH376_Cmd": true,
+  "CH376_Read": true,
+  "CH376_Write": true,
+  "wait": true,
+  "CH376T_GetFileSize": true,
+  "CH376T_SetUsbMode": true,
+  "CH376T_CMD_DISK_CONNECT": true,
+  "CH376T_DISK_MOUNT": true,
+  "CH376T_FILE_CREATE_NAME": true,
+  "CH376T_BYTE_WRITE_DATA": true,
+  "CH376T_FILE_CLOSE": true,
+  "CH376T_BYTE_LOCATE": true
+}

@@ -1,0 +1,46 @@
+{
+  "purpose": "Reproduce current control flow, including unsafe recreation; not acceptance of a fix.",
+  "results": [
+    {
+      "test": "test_healthy_resume_reuses_session_reset_start_creates",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    },
+    {
+      "test": "test_failed_creation_retry_waits_for_resume",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    },
+    {
+      "test": "test_known_session_error_retry_uses_ensure_after_resume",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    },
+    {
+      "test": "test_created_but_failed_validation_leaves_session_empty",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    },
+    {
+      "test": "test_append_open_missing_automatically_recreates",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    },
+    {
+      "test": "test_ensure_open_missing_automatically_recreates",
+      "observed_expected_current_behavior": true,
+      "failure_line": 0
+    }
+  ],
+  "inspected_sources_unchanged": true,
+  "source_sha256": {
+    "F:\\ESP32\\niaio\\git\\third\\main\\app\\monitor\\monitor.c": "0f68d0ff96c148bb69d63022c3cb4225f636be74acc737ea202e51884f1bd95d",
+    "F:\\ESP32\\niaio\\git\\third\\main\\app\\S1\\S1.c": "c2d1f870e67b1f4f51779160da3af8e3487909e038a7d7f65e79c8788839e959",
+    "F:\\ESP32\\niaio\\git\\third\\main\\service\\storage\\storage.c": "0454a72fe0befaf5a8ba68d771adc032486e6dfa8e39455c0fd69be85f6bcd50",
+    "F:\\ESP32\\niaio\\git\\third\\main\\driver\\ch376\\ch376_spi.c": "9cf1c884a04fd03d4a8b56bc279222f2e5620f19ffcd85cb5ee41f47fc1354a2",
+    "F:\\ESP32\\niaio\\git\\third_logtest_20261012\\main\\app\\monitor\\monitor.c": "0f68d0ff96c148bb69d63022c3cb4225f636be74acc737ea202e51884f1bd95d",
+    "F:\\ESP32\\niaio\\git\\third_logtest_20261012\\main\\app\\S1\\S1.c": "92a51e835b2bb1b8484cbe68cbf8910114363598fe0314e073ac6113a62b34b5",
+    "F:\\ESP32\\niaio\\git\\third_logtest_20261012\\main\\service\\storage\\storage.c": "10b191327b6b40cac65e25e67d9016f7805e0d7960d831654e6853e7ff5fb3ef",
+    "F:\\ESP32\\niaio\\git\\third_logtest_20261012\\main\\driver\\ch376\\ch376_spi.c": "ec3c01dab3b5891365025e2607a45af76987eb14b0547ccab403c0ade86ea713"
+  }
+}

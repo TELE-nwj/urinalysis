@@ -1,0 +1,391 @@
+--- before/D版修复与烧录说明.md
++++ current/D版修复与烧录说明.md
+@@ -1,4 +1,6 @@
+-# 20261015-D 存储保护修复版
++# 旧版说明：20261015-D（已由E版替代）
++
++本说明仅保留历史记录。D版实测在0x1E交接期间读取内部变量导致表头误拦截，当前工程及firmware已更新为E版。请使用E版修复与烧录说明.md，不按下文D版启动标识验收。
+ 
+ 此包包含可编辑源码、模型测试、可直接烧录的匹配镜像。正式third未被替换，本轮未烧录或操作U盘。
+ 
+--- before/E版修复与烧录说明.md
++++ current/E版修复与烧录说明.md
+@@ -0,0 +1,26 @@
++# 20261015-E 写盘握手修复版
++
++D版空内容原因已明确：在BYTE_WRITE返回0x1E、芯片等待接收数据时，新增诊断读取了不稳定的内部变量；读到FILE等临时字节后误判地址异常，导致56字节表头未发送。本版移除该交接阶段的探针，恢复连续的请求数据、供数、继续写流程，保留请求前FAT检查、完成后持久字段校验及关闭回读。暂停继续、Wi-Fi和会话标识保护保留。
++
++本目录为测试工程，正式third未改。旧D版源码和固件113文件已备份。本轮未烧录、未写U盘。
++
++## 匹配烧录文件
++
++| 地址 | 文件 |
++|---|---|
++| 0x0 | firmware/bootloader/bootloader.bin |
++| 0x8000 | firmware/partition_table/partition-table.bin |
++| 0x10000 | firmware/third.bin |
++
++目标ESP32-S3，DIO、80MHz、2MB Flash。以firmware/flash_args及flasher_args.json为准；使用实际ESP32-S3下载口，flash.ps1加-UsePrebuilt可烧录预编译镜像。不要自动把COM21日志口当下载口。
++
++启动必须出现：`[写盘握手修复版] 20261015-E`。
++
++## 最短验收
++
++1. 上电确认FAT保护与兼容校验通过，保存完整日志。
++2. 开始后必须完成56字节表头写入和关闭回读，出现测量文件已就绪。不能只凭文件名存在判成功。
++3. 测量2分钟，中途暂停继续，随后检测复位并等关闭验收结束，再把U盘接电脑。若每行47字节，文件应为56+47×2=150字节，含表头及00:01:00、00:02:00两行；以实际日志长度为准。
++4. 保存日志和实际TXT核对，再扩大到连续3分钟和复位后另建新记录。
++
++新增有状态模型已先复现D版失败，再验证E版单块、多块和完整56字节表头逐字节传输。模型与编译不等于实机验收，E尚需实测；固件不修复盘上已有错误，不补写前次未保存的分钟数据。
+--- before/main/driver/ch376/ch376_diag.c
++++ current/main/driver/ch376/ch376_diag.c
+@@ -325,7 +325,7 @@
+         uint64_t end=(uint64_t)s_geometry.partition+s_geometry.total;
+         uint64_t count=(end-s_geometry.data_lba)/s_geometry.spc;
+         /* 整簇EOF尚未分配下一簇时，当前簇/地址可能是结束标记。
+-         * 允许发送下一次请求，但真正提供数据前仍须通过CanFeed的已分配页校验。 */
++         * 允许发送下一次请求；数据交接期间不插入诊断，完成后再检查持久字段。 */
+         bool eof=offset==size && offset%(s_geometry.spc*512u)==0;
+         bool page=current>=2 && (uint64_t)current<count+2 && target>=s_geometry.data_lba && (uint64_t)target<end;
+         ok=size!=UINT32_MAX && start>=2 && (uint64_t)start<count+2 && (page || eof);
+@@ -335,33 +335,11 @@
+     return ok;
+ }
+ 
+-/* 在每次0x1E交接后、提供数据和发送WR_GO之前核对实际数据页。
+- * 新建的零长度文件在BYTE_WRITE之前首簇为0是合法的，不能在CREATE后直接误杀；
+- * 但芯片请求接收数据时必须给出可核验的已分配数据簇，否则安全停止。
+- * 仅READ_VAR读取内部变量，不发物理读，不切换文件或目录缓冲。 */
+-bool CH376_DiagCanFeed(const char *stage)
+-{
+-    uint32_t start=diag_read32(0x60),current=diag_read32(0x64);
+-    uint32_t buffer=diag_read32(0x54),target=diag_read32(0x58);
+-    uint64_t end=(uint64_t)s_geometry.partition+s_geometry.total;
+-    uint64_t count=s_geometry.valid?(end-s_geometry.data_lba)/s_geometry.spc:0;
+-    bool ok=s_geometry.valid && s_fat_healthy && !s_write_fault && start>=2 &&
+-            (uint64_t)start<count+2 && current>=2 && (uint64_t)current<count+2;
+-    uint64_t begin=ok?s_geometry.data_lba+(uint64_t)(current-2)*s_geometry.spc:0;
+-    ok=ok && buffer>=begin && buffer<begin+s_geometry.spc && target>=begin &&
+-       target<begin+s_geometry.spc && buffer>=s_geometry.data_lba && target>=s_geometry.data_lba &&
+-       (uint64_t)buffer<end && (uint64_t)target<end;
+-    ESP_LOGI(TAG,"[数据页保护] 阶段=%s 首簇=%lu 当前簇=%lu 缓冲LBA=%lu 读写LBA=%lu 数据区起点=%lu 结果=%s",
+-             stage,(unsigned long)start,(unsigned long)current,(unsigned long)buffer,(unsigned long)target,
+-             (unsigned long)s_geometry.data_lba,ok?"通过":"非法或无法确认，禁止继续送数据");
+-    if (!ok) s_write_fault=true;
+-    return ok;
+-}
+-
+ bool CH376_DiagWriteFault(void) { return s_write_fault; }
+ 
+ /* 完成中断后内部页可能已转到FAT或EOF，不能继续强制它留在数据簇。
+- * 数据页在送数据前已经检查，此处只核对将要持久化的文件标识、长度和指针。 */
++ * 请求前已经检查FAT和文件上下文，此处核对将要持久化的首簇、长度和指针；
++ * 不能把这项事后校验说成可以回滚之前的介质写入。 */
+ bool CH376_DiagCanFinish(void)
+ {
+     uint32_t start=diag_read32(0x60),size=diag_read32(0x68),offset=diag_read32(0x6c);
+--- before/main/driver/ch376/ch376_diag.h
++++ current/main/driver/ch376/ch376_diag.h
+@@ -9,7 +9,6 @@
+ uint32_t CH376_DiagLocateResult(uint32_t offset);
+ bool CH376_DiagEnsureReady(void);
+ bool CH376_DiagCanWrite(const char *stage);
+-bool CH376_DiagCanFeed(const char *stage);
+ bool CH376_DiagWriteFault(void);
+ bool CH376_DiagCanFinish(void);
+ void CH376_DiagRootPath(const char *name);
+--- before/main/driver/ch376/ch376_spi.c
++++ current/main/driver/ch376/ch376_spi.c
+@@ -636,10 +636,9 @@
+     }
+ 
+     do {
+-        if (!CH376_DiagCanFeed("芯片请求数据后、提供数据前")) {
+-            ESP_LOGE(TAG,"[写盘拦截] 实际数据页非法，不发送请求数据或继续写命令；关闭时不更新长度");
+-            return 0;
+-        }
++        /* 0x1E交接阶段只按厂商流程提供数据、继续写入。
++         * 此时内部变量窗口可能映射临时数据，禁止插入READ_VAR或其他诊断命令。
++         * 请求前检查FAT/文件上下文，最终0x14后再检查持久字段并关闭回读。 */
+         CH376_Cmd(CMD_WR_REQ_DATA); /* 0x2d */
+         uint8_t n = CH376_Read();
+         const uint8_t requested = n;
+--- before/main/main.c
++++ current/main/main.c
+@@ -39,7 +39,7 @@
+     ESP_LOGI(TAG, "=================================================");
+     ESP_LOGI(TAG, "尿量计启动  分层版  编译于 %s %s", __DATE__, __TIME__);
+     ESP_LOGI(TAG, "功能: 两键三态 + 串口屏 + 每分钟写U盘 + 电量/时间");
+-    ESP_LOGW(TAG, "[存储保护修复版] 20261015-D；FAT保留项预检/实际数据页保护/异常关闭不更新长度/保留会话保护；仍需实机验收");
++    ESP_LOGW(TAG, "[写盘握手修复版] 20261015-E；数据交接不插入诊断命令/FAT预检/完成后校验与关闭回读/保留会话保护；仍需实机验收");
+     ESP_LOGI(TAG, "=================================================");
+ 
+     /* ---- service 初始化（底层硬件在各自 init 内部完成） ---- */
+--- before/main/service/storage/README.md
++++ current/main/service/storage/README.md
+@@ -4,7 +4,7 @@
+ 
+ 20261015-C：编号在首次发送创建命令前锁定；即使创建回复、关闭或校验失败，也不会重新选号。恢复和追加不再具有创建文件的权限，收到`0x42`仅报错并保留原标识，防止已有记录被同名重建覆盖。开始时未插盘、尚未选定编号的检测，插盘后仍可首次分配。
+ 
+-20261015-D：新检测/恢复先只读校验FAT保留项和各份首扇区，再进行文件操作。芯片实际请求数据后必须给出有效的数据簇与目标LBA，异常时禁止送数据并以参数0关闭，不更新目录长度。空文件分配前和整簇EOF请求前分别处理；完成后仅核对文件首簇/长度/指针，避免把临时缓冲切回FAT误当数据目标。当前已损坏的盘会拒写，固件不自动修盘；FAT首扇区通过也不代表全盘一致。
++20261015-E：新检测/恢复先只读校验FAT保留项和各份首扇区，再进行文件操作。数据交接阶段只执行厂商0x1E→0x2D→0x3D流程，不插入READ_VAR诊断；D版在此阶段读取临时变量造成误拦截，已移除。空文件分配前和整簇EOF请求前分别处理；最终完成后核对文件首簇/长度/指针，异常关闭不更新长度，随后关闭重挂载回读。FAT首扇区通过不代表全盘一致，事后检查不能回滚已发出的写入。
+ 
+ ## 1. 文件格式
+ 
+--- before/tests/address-diagnostics/fixture.c
++++ current/tests/address-diagnostics/fixture.c
+@@ -28,8 +28,13 @@
+ static unsigned disk_chunk;
+ static bool fat_read_error;
+ static bool physical_stream;
++/* 1E交接阶段的有状态模型：内部变量窗口不能作为稳定文件状态读取。 */
++static bool protocol_pending;
++static unsigned protocol_bad_commands, protocol_goal, protocol_written, protocol_chunk=3;
++static uint8_t protocol_payload[128];
+ void test_log(const char *tag,const char *format,...) {(void)tag;(void)format;}
+ void CH376_Cmd(uint8_t cmd) {
++    if(scenario==30&&protocol_pending&&cmd!=0x2d&&cmd!=0x3d)protocol_bad_commands++;
+     active_cmd=cmd;read_index=0;param_count=0;
+     if(command_count<256) commands[command_count++]=cmd;
+     if(cmd==0x55) go_count++;
+@@ -40,6 +45,7 @@
+ }
+ void CH376_Cmd_End(void) {}
+ void CH376_Write(uint8_t v) {
++    if(scenario==30&&active_cmd==0x2d&&protocol_written<sizeof(protocol_payload))protocol_payload[protocol_written++]=v;
+     if(param_count<8)params[param_count++]=v;
+     if(active_cmd==0x0c||active_cmd==0x0a)var_address=v;
+     if(scenario==20&&active_cmd==0x54&&param_count==5)
+@@ -52,6 +58,8 @@
+ }
+ uint8_t CH376_Read(void) {
+     read_count++;
++    if(scenario==30&&protocol_pending&&active_cmd==0x0c){const uint8_t unstable[4]={'F','I','L','E'};return unstable[read_index++%4];}
++    if(scenario==30&&active_cmd==0x2d){unsigned left=protocol_goal-protocol_written;return left<protocol_chunk?left:protocol_chunk;}
+     if(scenario==20&&physical_stream&&active_cmd==0x27){
+         if(read_index++==0)return 64;
+         unsigned at=disk_chunk*64+read_index-2;
+@@ -76,6 +84,12 @@
+ }
+ uint8_t wait(void) {
+     wait_count++;
++    if(scenario==30&&active_cmd==0x3c){protocol_pending=true;return 0x1e;}
++    if(scenario==30&&active_cmd==0x3d){
++        if(protocol_written<protocol_goal)return 0x1e;
++        protocol_pending=false;regs[0x6c]+=protocol_written;
++        if(regs[0x6c]>regs[0x68])regs[0x68]=regs[0x6c];return 0x14;
++    }
+     if(scenario==20&&(active_cmd==0x54||active_cmd==0x55))return fat_read_error?0x20:(disk_chunk<8?0x1d:0x14);
+     if(scenario>=10){
+         if(active_cmd==0x32){bytes8[0x2b]=0x12;return open_result;}
+@@ -137,11 +151,7 @@
+ int test_nonempty_zero_start_cluster_blocks(void){writing_file();regs[0x60]=0;CHECK(!CH376_DiagCanWrite("test"));return 0;}
+ int test_nonempty_target_in_fat_blocks(void){writing_file();regs[0x58]=16432;CHECK(!CH376_DiagCanWrite("test"));return 0;}
+ int test_nonempty_cluster_out_of_volume_blocks(void){writing_file();regs[0x64]=0x0ffffff0;CHECK(!CH376_DiagCanWrite("test"));return 0;}
+-int test_data_page_valid_target_allows_feed(void){writing_file();CHECK(CH376_DiagCanFeed("test"));CHECK(!CH376_DiagWriteFault());return 0;}
+-int test_zero_cluster_request_latches_fault(void){writing_file();regs[0x60]=0;regs[0x64]=0;regs[0x68]=0;regs[0x58]=16432;CHECK(!CH376_DiagCanFeed("test"));CHECK(CH376_DiagWriteFault());CHECK(!CH376_DiagCanWrite("later"));return 0;}
+-int test_fat_buffer_blocks_even_if_directory_valid(void){writing_file();regs[0x54]=16432;CHECK(!CH376_DiagCanFeed("test"));return 0;}
+-int test_wrong_cluster_buffer_blocks(void){writing_file();regs[0x54]=18544;regs[0x58]=18544;CHECK(!CH376_DiagCanFeed("test"));return 0;}
+-int test_empty_new_file_before_allocation_is_allowed(void){writing_file();regs[0x60]=0;regs[0x64]=0;regs[0x68]=0;regs[0x54]=16448;regs[0x58]=16448;CHECK(CH376_DiagCanWrite("before allocation"));CHECK(!CH376_DiagCanFeed("after request"));return 0;}
++int test_empty_new_file_before_allocation_is_allowed(void){writing_file();regs[0x60]=0;regs[0x64]=0;regs[0x68]=0;regs[0x54]=16448;regs[0x58]=16448;CHECK(CH376_DiagCanWrite("before allocation"));return 0;}
+ /* 完成后缓冲可能已切回FAT；不能再按正在接收数据的页来判错。 */
+ int test_finish_allows_nondata_buffer_after_cluster_eof(void){writing_file();regs[0x68]=4096;regs[0x6c]=4096;regs[0x64]=0;regs[0x54]=1120;regs[0x58]=UINT32_MAX;CHECK(CH376_DiagCanFinish());return 0;}
+ int test_finish_zero_cluster_rejects_directory_update(void){writing_file();regs[0x60]=0;regs[0x6c]=56;CHECK(!CH376_DiagCanFinish());CHECK(CH376_DiagWriteFault());return 0;}
+--- before/tests/address-diagnostics/run_tests.py
++++ current/tests/address-diagnostics/run_tests.py
+@@ -15,7 +15,7 @@
+ names+=['test_legacy_correction_and_no_repeat','test_legacy_high_byte_mismatch_blocks','test_legacy_ready_wrong_base_blocks','test_new_chip_no_legacy_writes','test_legacy_root_open_failure_blocks','test_bad_data_base_blocks_write','test_directory_in_fat_blocks_write','test_valid_directory_allows_write','test_readback_bytes_match','test_readback_content_mismatch','test_readback_zero_length_blocks','test_readback_closes_without_update']
+ names+=['test_partial_correction_blocks']
+ names+=['test_fat_zero_reserved_entry_blocks','test_fat_wrong_media_ff_blocks','test_fat_reserved_one_invalid_blocks','test_fat_first_sector_mismatch_blocks','test_fat_read_error_blocks_and_remounts','test_nonempty_zero_start_cluster_blocks','test_nonempty_target_in_fat_blocks','test_nonempty_cluster_out_of_volume_blocks']
+-names+=['test_data_page_valid_target_allows_feed','test_zero_cluster_request_latches_fault','test_fat_buffer_blocks_even_if_directory_valid','test_wrong_cluster_buffer_blocks','test_empty_new_file_before_allocation_is_allowed']
++names+=['test_empty_new_file_before_allocation_is_allowed']
+ names+=['test_finish_allows_nondata_buffer_after_cluster_eof']
+ names+=['test_finish_zero_cluster_rejects_directory_update']
+ names+=['test_append_allows_aligned_eof_before_allocation']
+--- before/tests/log-sequence/run_tests.py
++++ current/tests/log-sequence/run_tests.py
+@@ -37,7 +37,7 @@
+ static unsigned scenario, hash, calls, polls, delay_calls, yields;
+ static unsigned target_polls;
+ static bool force_block;
+-static bool force_feed_block, force_finish_block;
++static bool force_feed_block, force_finish_block, force_write_fault;
+ static unsigned feed_calls, data_requests, write_goes, last_parameter;
+ static void event(unsigned v) { hash = (hash ^ v) * 16777619u; }
+ void CH376_Cmd(uint8_t cmd) { if(cmd==0x2d)data_requests++;if(cmd==0x3d)write_goes++;event(0x100u | cmd); }
+@@ -63,7 +63,7 @@
+ bool CH376_DiagCanWrite(const char *stage) { (void)stage; return !force_block; }
+ bool CH376_DiagCanFeed(const char *stage) { (void)stage;feed_calls++;return !force_feed_block; }
+ bool CH376_DiagCanFinish(void) {return !force_finish_block;}
+-bool CH376_DiagWriteFault(void) { return force_feed_block; }
++bool CH376_DiagWriteFault(void) { return force_write_fault; }
+ '''
+ suffix = r'''
+ unsigned test_normal(void) { uint8_t b[3] = {1,2,3}; event(CH376T_BYTE_WRITE_DATA(b,3)); return hash; }
+@@ -75,9 +75,9 @@
+ unsigned test_wait_delayed(void) { target_polls=600; return wait() != 0x14 || delay_calls != 600 || yields != 2 || calls != 1; }
+ unsigned test_wait_timeout(void) { target_polls=600000; return wait() != 0xff || delay_calls != 500001 || calls || yields != (500001u/256u); }
+ unsigned test_guard_blocks_write(void) { force_block=true; uint8_t b[3]={1,2,3}; return CH376T_BYTE_WRITE_DATA(b,3)!=0 || hash!=0; }
+-unsigned test_data_page_guard_blocks_before_payload(void) {force_feed_block=true;uint8_t b[3]={1,2,3};return CH376T_BYTE_WRITE_DATA(b,3)!=0||data_requests||write_goes;}
++unsigned test_no_diagnostic_call_during_data_handoff(void) {force_feed_block=true;uint8_t b[3]={1,2,3};return CH376T_BYTE_WRITE_DATA(b,3)!=1||feed_calls||data_requests!=1||write_goes!=1;}
+ unsigned test_finish_guard_rejects_success(void) {force_finish_block=true;uint8_t b[3]={1,2,3};return CH376T_BYTE_WRITE_DATA(b,3)!=0;}
+-unsigned test_fault_close_does_not_update_length(void) {force_feed_block=true;calls=1;return CH376T_FILE_CLOSE()!=1||last_parameter!=0;}
++unsigned test_fault_close_does_not_update_length(void) {force_write_fault=true;calls=1;return CH376T_FILE_CLOSE()!=1||last_parameter!=0;}
+ '''
+ 
+ engines = {}
+@@ -93,10 +93,10 @@
+     engines[label] = RV32(elf)
+ 
+ results = []
+-for name in ['test_normal', 'test_zero_progress', 'test_oversize', 'test_multiblock', 'test_request_error', 'test_wait_immediate', 'test_wait_delayed', 'test_wait_timeout','test_guard_blocks_write','test_data_page_guard_blocks_before_payload','test_finish_guard_rejects_success','test_fault_close_does_not_update_length']:
++for name in ['test_normal', 'test_zero_progress', 'test_oversize', 'test_multiblock', 'test_request_error', 'test_wait_immediate', 'test_wait_delayed', 'test_wait_timeout','test_guard_blocks_write','test_no_diagnostic_call_during_data_handoff','test_finish_guard_rejects_success','test_fault_close_does_not_update_length']:
+     a, b = (engines[label].call(name) for label in ['baseline', 'logtest'])
+     passed = a == b and (not name.startswith('test_wait_') or a == 0)
+-    if name in ['test_guard_blocks_write','test_data_page_guard_blocks_before_payload','test_finish_guard_rejects_success','test_fault_close_does_not_update_length']: passed=a!=0 and b==0
++    if name in ['test_guard_blocks_write','test_finish_guard_rejects_success','test_fault_close_does_not_update_length']: passed=a!=0 and b==0
+     results.append({'case': name, 'baseline': a, 'logtest': b, 'passed': passed})
+     print(('PASS ' if passed else 'FAIL ') + name, flush=True)
+ (out / 'results.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
+--- before/tests/write-handshake/cases.c
++++ current/tests/write-handshake/cases.c
+@@ -0,0 +1,29 @@
++/* 真实diag和真实字节写函数共同运行；不将诊断保护简化成布尔桩。 */
++#include "service/storage/storage.h"
++void *memcpy(void*d,const void*s,size_t n){uint8_t*a=d;const uint8_t*b=s;while(n--)*a++=*b++;return d;}
++static void prepare_protocol(unsigned length){writing_file();regs[0x6c]=56;scenario=30;protocol_goal=length;}
++int test_handshake_single_block_without_interleaved_probe(void){
++    prepare_protocol(3);const uint8_t data[3]={'a','b','c'};
++    CHECK(CH376T_BYTE_WRITE_DATA(data,3)==1);CHECK(protocol_bad_commands==0);
++    CHECK(protocol_written==3&&!protocol_pending&&regs[0x68]==59);
++    for(unsigned i=0;i<3;i++)CHECK(protocol_payload[i]==data[i]);return 0;
++}
++int test_handshake_multiple_blocks_without_interleaved_probe(void){
++    prepare_protocol(7);const uint8_t data[7]={1,2,3,4,5,6,7};
++    CHECK(CH376T_BYTE_WRITE_DATA(data,7)==1);CHECK(protocol_bad_commands==0);
++    CHECK(protocol_written==7&&!protocol_pending&&regs[0x68]==63);
++    for(unsigned i=0;i<7;i++)CHECK(protocol_payload[i]==data[i]);return 0;
++}
++int test_handshake_damaged_fat_stops_before_request(void){
++    prepare_protocol(3);s_fat_healthy=false;const uint8_t data[3]={1,2,3};
++    CHECK(CH376T_BYTE_WRITE_DATA(data,3)==0);CHECK(!protocol_pending&&protocol_written==0);
++    for(unsigned i=0;i<command_count;i++)CHECK(commands[i]!=0x3c);return 0;
++}
++int test_handshake_new_file_receives_complete_header(void){
++    prepare_protocol(strlen(STORAGE_HEADER));protocol_chunk=64;
++    regs[0x60]=6;regs[0x64]=6;regs[0x68]=0;regs[0x6c]=0;regs[0x54]=16448;regs[0x58]=16448;
++    CHECK(CH376T_BYTE_WRITE_DATA((const uint8_t*)STORAGE_HEADER,strlen(STORAGE_HEADER))==1);
++    CHECK(protocol_bad_commands==0&&protocol_written==strlen(STORAGE_HEADER));
++    CHECK(regs[0x68]==strlen(STORAGE_HEADER)&&regs[0x6c]==strlen(STORAGE_HEADER));
++    for(unsigned i=0;i<strlen(STORAGE_HEADER);i++)CHECK(protocol_payload[i]==(uint8_t)STORAGE_HEADER[i]);return 0;
++}
+--- before/tests/write-handshake/run_tests.py
++++ current/tests/write-handshake/run_tests.py
+@@ -0,0 +1,27 @@
++"""复现真实D握手故障：真实diag/字节写 + 不稳定内部变量窗口模型。"""
++from pathlib import Path
++import json,re,subprocess,sys,argparse
++here=Path(__file__).resolve().parent
++project=here.parents[1]
++parser=argparse.ArgumentParser();parser.add_argument('--label',default='current');parser.add_argument('--baseline-d',action='store_true');args=parser.parse_args()
++source_root=project.parents[1]/'outputs/third-handshake-fix-20261015/before' if args.baseline_d else project
++runtime={};exec((project/'tests/storage-write-guard/rv32_host.py').read_text().replace('5_000_000','50_000_000'),runtime)
++gcc,RV32=runtime['GCC'],runtime['RV32']
++out=here/'.build';out.mkdir(exist_ok=True)
++fixture=(project/'tests/address-diagnostics/fixture.c').read_text(encoding='utf8')
++fixture=fixture.replace('#include "../../main/driver/ch376/ch376_diag.c"','#include "'+(source_root/'main/driver/ch376/ch376_diag.c').as_posix()+'"')
++driver=(source_root/'main/driver/ch376/ch376_spi.c').read_text(encoding='utf8')
++begin=driver.index('uint8_t CH376T_BYTE_WRITE_DATA(')
++write=driver[begin:driver.index('//关闭文件',begin)]
++cases=(here/'cases.c').read_text(encoding='utf8')
++generated=out/'integration.c';generated.write_text(fixture+'\n'+write+'\n'+cases,encoding='utf8')
++libgcc=subprocess.check_output([str(gcc),'-march=rv32i_zicsr_zifencei','-mabi=ilp32','-print-libgcc-file-name'],text=True).strip()
++elf=out/'integration.elf'
++command=[str(gcc),'-march=rv32im','-mabi=ilp32','-std=c11','-Os','-ffreestanding','-fno-builtin','-msmall-data-limit=0','-nostdlib','-Wl,-Ttext=0x10000','-Wl,-e,0x10000','-Wl,--no-relax','-DCMD_BYTE_WRITE=0x3c','-DCMD_WR_REQ_DATA=0x2d','-DCMD_BYTE_WR_GO=0x3d','-DUSB_INT_DISK_WRITE=0x1e','-I',str(project/'main'),'-I',str(project/'tests/storage-write-guard/monitor-stubs'),str(generated),libgcc,'-o',str(elf)]
++subprocess.run(command,check=True);engine=RV32(elf)
++results=[]
++for name in re.findall(r'^int (test_handshake_\w+)\(void\)',cases,re.M):
++    line=engine.call(name);results.append({'test':name,'passed':line==0,'failure_line':line})
++    print(('PASS ' if line==0 else 'FAIL ')+name+(f' line {line}' if line else ''),flush=True)
++(out/(args.label+'-results.json')).write_text(json.dumps(results,indent=2),encoding='utf8')
++sys.exit(0 if all(r['passed'] for r in results) else 1)
+--- before/日志测试说明.md
++++ current/日志测试说明.md
+@@ -1,55 +1,36 @@
+-# 存储保护修复版 20261015-D
++# 写盘握手修复版 20261015-E
+ 
+-工程：`F:\ESP32\niaio\git\third_logtest_20261012`。正式`git\third`未改动。修改前C版源码、测试与镜像112文件备份在`F:\ESP32\niaio\outputs\third-cluster-fix-20261015\before`，附before-manifest.json。本轮不烧录、不监听、不修复或格式化U盘。
++工程：F:\ESP32\niaio\git\third_logtest_20261012。正式third未改，修改前D版113文件已备份到outputs/third-handshake-fix-20261015/before。本轮未烧录、未监听、未写U盘。
+ 
+-启动必须出现：`[存储保护修复版] 20261015-D`。这是包含代码修复的测试固件，保留旧芯片兼容、回读和C版会话保护。C版实测U3首簇0、长度56，表头实际写进FAT2绝对LBA16432；D版针对损坏FAT和非法数据页增加拒写保护。它不自动修复U盘，不代表已解决全部芯片分配/文件系统问题。
++## 本次实机结论
+ 
+-## D版新增保护
++用户同一路径日志已经更新为D版，274653字节。FAT预检通过、创建后首簇6；BYTE_WRITE返回0x1E后，D版新增READ_VAR32探针读到FILE、0001等临时数据，随后误拦截，未发送WR_REQ_DATA或WR_GO，表头没有提供给芯片。电脑当前U0000001.TXT实际只有1字节2E（句点），不是正常的表头或分钟记录。不能继续沿用上轮C版U3损坏的结论解释本次空内容。
+ 
+-- 创建及故障恢复前只读检查各份FAT首扇区：保留项0须匹配BPB介质字节，保留项1须有效，双FAT首扇区须一致。缓存了BPB仍重查FAT。失败也尝试重新挂载恢复查询上下文，然后禁止文件操作。
+-- 实际送数据前（收到0x1E之后）读取芯片内部首簇、当前簇、缓冲LBA和读写LBA；必须是有效数据簇和该簇范围内的数据页，不允许把0号簇换算到数据区之前。不能确认时不提供数据、不发WR_GO。
+-- 新建零长度文件在分配前首簇0本身合法；整簇EOF也可能尚未分配下一簇。请求前分别允许这两类状态，但真正送数据仍必须通过已分配数据页检查。
+-- 完成中断后只检查持久文件首簇、长度、指针，不要求临时缓冲仍留在数据区，避免把完成后的FAT缓冲切换误判为写错。
+-- 非法数据页/完成状态会锁存当前初始化轮次的写入故障，关闭文件时传参数0，不更新目录长度。自动恢复可能重新初始化并清除此轮锁存，但仍必须重新通过FAT预检；不声称此保护可以回滚芯片此前已经写出的数据。
+-- FAT检查仅覆盖首扇区与保留项，不是完整FAT一致性扫描。0x1E时变量的具体时序仍需实机验证；若旧芯片不给出可确认目标，本版保守拒写，不能据模型宣称实物一定恢复正常。
++D版把交接阶段内部变量视为稳定文件状态是错误的保护时机；静态寄存器模型没有覆盖该现象。E版修正此问题，并新增实际diag+实际字节写的有状态模型复现。
+ 
+-**当前H盘仍有介质字节不符、U3非法目录项及旧FAT差异，D版应打印FAT保护拒写。不要把拒写当成检测停止；计量继续，但这些分钟未保存。介质需另行备份修复后才能验收正常写盘，本轮没有执行修盘。**
++## E版修改
+ 
+-## 保留的C版会话修复
++- 数据交接严格保持厂商流程：0x1E → 0x2D提供请求字节 → 0x3D继续，直到最终0x14。交接阶段不再发READ_VAR或其他诊断SPI命令，已删除CanFeed API，避免误用。
++- 请求之前仍检查FAT保留项、双FAT首扇区、可靠BPB、数据区基址及已有文件上下文；不在打开文件时进行物理读。
++- 最终0x14之后检查首簇、长度、指针；异常关闭仍不更新长度。关闭后重挂载、准确长度与内容回读保留。
++- 保留C版会话保护：暂停继续不换号，已分配文件恢复/追加失败不自动重建，复位后下一次开始新文件。
++- Wi-Fi热点、手机通信配置和实现不改；写盘只暂停状态推送，Wi-Fi连接保持，退出后恢复。
+ 
+-- 首次发送创建命令前锁定会话编号。创建回复、写表头、关闭或回读失败均保留原编号，5秒重试只恢复同一文件。
+-- 恢复及追加收到0x42不再创建文件、不重写表头，明确打印`[会话保护]`；文件长度小于表头或为无效值时禁止追加。
+-- 正常暂停继续不分配新文件；检测复位后再开始才分配下一编号。尚未分配编号时的无盘检测，后续插盘可首次分配。
+-- 文件真正缺失、表头残缺时保持计量及错误提示，不做覆盖修复；请保留日志后复位开启新检测。此前丢失的分钟记录不缓存、不补写。
+-- `[会话控制]`记录新检测、暂停继续及复位；`[会话重试]`记录首次分配或恢复原因；`[会话保护]`记录锁定文件及禁止重建原因。
++FAT预检不等于全表一致；完成后校验不能回滚已经发生的底层写入。E不宣称事前获得芯片未来的实际数据目标，也不自动修盘。
+ 
+-## 日志与行为
++## 烧录与验收
+ 
+-- `[兼容验证]`：芯片版本、文件系统状态、处理前内部0x4C/0x50，空文件名打开根目录结果，读取0xCF，BPB保留区高字节及修正量。
+-- 对合法版本低于0x43且状态未READY的芯片，按官方EVT流程初始化根目录；只有0xCF、BPB高字节、数据基址差及原内部基准相互吻合才调整0x4C/0x50并清0x70。不给物理读写地址统一加1024。新芯片或已READY只做校验，防止重复补偿。
+-- `[兼容变量]`、`[兼容基准]`、`[兼容结论]`：处理后值、复读、差值、根簇、每簇扇区数及通过/失败。旧芯片补偿后的0x4C是厂商内部基准，不再直接等同MBR分区起点。本盘若0xCF实际读为04，期望0x4C从64到1088、0x50从15424到16448，数据差值0。没有实测到0xCF=04之前不能假定它必然是04。
+-- `[写盘拦截]`、`[写盘保护]`：没有可靠BPB、芯片无效、修正条件不符、基准/数据区/根簇不符，或目录在数据区之外时禁止进入建文件/字节写。挂载失败也不再沿用旧版“仍然就绪”。
+-- 新建文件的表头：写完、关闭、重新挂载、重新执行兼容校验、打开、检查准确长度、定位0、逐字节读回并比较。
+-- 每分钟写入：保存追加前偏移、请求文本和期望总长度；关闭后重新挂载/兼容校验/打开，确认目录地址和总长度，定位该段开头，逐字节比较新增内容。`[内容回读]`打印一致或首个不同字节的位置与值；`[分钟验收]`汇总结果。回读失败会使本次写盘返回失败，不能再靠原0x14打印成功。
+-- 回读校验采用FILE_CLOSE参数0，不更新目录长度；成功或失败都尝试结束校验文件上下文。读缓冲长度声明全部排空，零长度、超量、错误码及轮数上限明确失败。
+-- 断盘恢复已有文件也回读表头，避免只因OPEN成功就恢复写入。
++使用本工程firmware里的匹配镜像，ESP32-S3、DIO、80MHz、2MB：0x0 bootloader/bootloader.bin；0x8000 partition_table/partition-table.bin；0x10000 third.bin。下载口必须用实际ESP32-S3端口，不自动把COM21日志口当下载口。脚本flash.ps1加-UsePrebuilt可用预编译镜像，参数以flash_args为准。
+ 
+-正常应用写入仍会修改U盘。兼容调整仅写芯片内部变量；初始化物理扇区探针只读，未加入物理写/擦除/格式化命令。错误基址会拦截写入，但这不能代替实机验收。
++启动必须出现：[写盘握手修复版] 20261015-E。
+ 
+-本测试副本最近追加段缓存为96字节，超过95字节的单段会拒绝写入，当前每分钟47字节记录在范围内。多次追加只比较最后一段及准确总长度；新文件表头已在创建时单独比较。本版大量日志与回读会延长暂停液滴中断/推送的窗口，仅供排查，不能据此验证连续采集精度或正式版性能。
++1. 先上电保存完整115200/8N1 UTF-8日志。确认FAT保护、兼容结论通过；失败则保留日志，不绕过保护。
++2. 点击开始，必须看到完整表头写入、完成保护、关闭后56字节表头回读通过，以及测量文件已就绪。若失败，保留全段日志，不以文件名存在为成功依据。
++3. 有效测量至少2分钟，中途暂停继续，确认同一文件追加，分钟时间连续。若每行47字节、表头56字节，两分钟应150字节，以实际请求长度为准。
++4. 检测复位，等待关闭/回读结束后接电脑；应看到完整表头和两条分钟数据行。再安全弹出重插核对，之后才扩展到三分钟和复位后下一次新文件测试。
+ 
+-## 下一次怎么测试
++## 验证范围
+ 
+-1. 从该工程的firmware烧录D版，下载口仍需按实际ESP32-S3端口指定，不能自动把COM21日志口当下载口。
+-2. 先只上电，保存完整UTF-8、115200/8N1/无流控启动日志，查看`FAT保护`及`兼容结论`。当前损坏盘预期拒写；保留拒写日志，不能靠反复开始绕过。介质经备份修复后，FAT和兼容均通过、数据基址差0，才继续写入验收。
+-3. 启动通过后开始一次检测，中间至少暂停继续两次，累计有效测量满3分钟。保存全部日志。正常应只有一次创建，继续日志始终沿用同一编号，每分钟均为打开追加，不能出现现场创建。若每分钟新增47字节、表头56字节，则3分钟总长197字节；以实际日志请求长度为准。
+-4. 若出现0x42，应看到禁止重建及同一编号的恢复重试；这证明防覆盖生效，但仍是本次存储异常，不算完整验收通过。保存现场日志，不要靠反复复位掩盖。
+-5. 正常三分钟完成后检测复位、再次开始，验证另分配一个编号。等待表头验收完成后再检测复位，再接电脑。旧文件应保留全部三行，新文件单独存在；暂停不计时，分钟时间连续。安全弹出重插后确认，分别核对芯片回读、电脑文件及文件系统状态。
++新增有状态联合模型使用实际diag.c和实际BYTE_WRITE_DATA函数；在0x1E阶段模拟现场读到FILE的不稳定窗口。D基线4项3失败1过，E版4项全过，包括单块、多块、完整56字节表头逐字节核对、损坏FAT请求前拒绝。该模型补上前版把CanFeed简化为布尔桩的覆盖缺口。
+ 
+-当前盘之前已发生FAT损坏。若地址已正确但电脑仍报告文件系统错误，应保留本轮证据后再处理；本轮未擅自再修盘或格式化。
+-
+-## 验证
+-
+-本轮验证报告在`F:\ESP32\niaio\outputs\third-cluster-fix-20261015`；现场证据在`outputs\third-corruption-20261015`。新FAT与簇保护要求在C版先出现9项失败，完成/EOF边界另保留红绿验证。联合会话回归接入真实monitor/S1/storage；地址模型执行实际diag.c，字节写模型执行实际驱动函数，SDK与CH376使用桩。另运行原控制及存储服务回归和ESP32-S3构建。模型不包含真实CH376或闪存，不能宣称实物已经修复。
+-
+-源码参考：[沁恒EVT文件系统层镜像](https://github.com/changleo828/BOSSEN_USB_FOR_WT/blob/master/Documents/EVT/EXAM/FILE_SYS.C)，CH376SetFileName和CH376FileOpen旧版本分支。实现另增加BPB一致性约束、重复补偿保护及地址拦截，没有直接套用未知偏移。
++另运行地址/兼容/完成/回读模型、控制和写盘临界区、会话联合、存储服务、原字节算法/等待回归并构建ESP32-S3。各项结果与审查报告在outputs/third-handshake-fix-20261015。模型和构建不替代真实CH376/SPI/文件系统实机闭环；当前尚未烧录验证E。

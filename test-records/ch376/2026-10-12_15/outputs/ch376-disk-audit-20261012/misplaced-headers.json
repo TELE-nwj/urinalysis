@@ -1,0 +1,32 @@
+{
+  "data_area_first_sector": 16384,
+  "fat2_first_sector": 8720,
+  "fat_size_sectors": 7664,
+  "headers_inside_fat2": [
+    {
+      "fat2_byte_offset": 3391488,
+      "volume_sector": 15344,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n"
+    },
+    {
+      "fat2_byte_offset": 3395584,
+      "volume_sector": 15352,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n"
+    },
+    {
+      "fat2_byte_offset": 3399680,
+      "volume_sector": 15360,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          8.0ml           480.0m"
+    },
+    {
+      "fat2_byte_offset": 3403776,
+      "volume_sector": 15368,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          9.0ml           540.0m"
+    },
+    {
+      "fat2_byte_offset": 3407872,
+      "volume_sector": 15376,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:02:00          11.5ml          690.0m"
+    }
+  ]
+}

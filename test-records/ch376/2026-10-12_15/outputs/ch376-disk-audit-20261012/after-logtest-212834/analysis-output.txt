@@ -1,0 +1,167 @@
+{
+  "read_only": true,
+  "geometry": {
+    "sector_bytes": 512,
+    "cluster_sectors": 8,
+    "reserved_sectors": 1056,
+    "fat_sectors": 7664,
+    "fat_copies": 2,
+    "hidden_sectors": 64,
+    "actual_partition_sector": 64,
+    "ext_flags": 0,
+    "fat1_volume_start": 1056,
+    "fat2_volume_start": 8720,
+    "data_volume_start": 16384
+  },
+  "matches": [
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15344,
+      "physical_sector": 15408,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15352,
+      "physical_sector": 15416,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          7.5ml           450.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          6.0ml           360.0ml/h  \r\n4TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0002\u0000g\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15368,
+      "physical_sector": 15432,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          26.0ml          1560.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15376,
+      "physical_sector": 15440,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          10.0ml          600.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15384,
+      "physical_sector": 15448,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.5ml           330.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15352,
+      "physical_sector": 15416,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          7.5ml           450.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          6.0ml           360.0ml/h  \r\n4TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0002\u0000g\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15368,
+      "physical_sector": 15432,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          26.0ml          1560.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15376,
+      "physical_sector": 15440,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          10.0ml          600.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15384,
+      "physical_sector": 15448,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.5ml           330.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "5.5ml",
+      "volume_sector": 15384,
+      "physical_sector": 15448,
+      "byte_in_sector": 74,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.5ml           330.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "330.0ml/h",
+      "volume_sector": 15384,
+      "physical_sector": 15448,
+      "byte_in_sector": 90,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.5ml           330.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "U0000001TXT",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 128,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          6.0ml           360.0ml/h  \r\n4TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0002\u0000g\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "U0000002TXT",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 160,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          6.0ml           360.0ml/h  \r\n4TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0002\u0000g\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    }
+  ],
+  "root_entries": [
+    {
+      "short_name": "SYSTEM~1   ",
+      "attr": 22,
+      "cluster": 3,
+      "size": 0
+    }
+  ],
+  "misplaced_directory_entries": [
+    {
+      "short_name": "U0000001TXT",
+      "volume_sector": 15360,
+      "byte_in_sector": 128,
+      "cluster": 4,
+      "size": 103,
+      "expected_data_volume_sector": 16400,
+      "raw_hex": "55 30 30 30 30 30 30 31 54 58 54 20 00 00 00 00 00 00 00 00 00 00 00 00 21 30 04 00 67 00 00 00"
+    },
+    {
+      "short_name": "U0000002TXT",
+      "volume_sector": 15360,
+      "byte_in_sector": 160,
+      "cluster": 5,
+      "size": 103,
+      "expected_data_volume_sector": 16408,
+      "raw_hex": "55 30 30 30 30 30 30 32 54 58 54 20 00 00 00 00 00 00 00 00 00 00 00 00 21 30 05 00 67 00 00 00"
+    }
+  ],
+  "fat_mismatch_sectors": 6
+}

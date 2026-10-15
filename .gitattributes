@@ -1,0 +1,5 @@
+# 测试证据和固件源码快照按原始字节保存，避免Windows换行转换破坏SHA256。
+/test-records/** -text
+/third/** -text
+/third_logtest_20261012/** -text
+/docs/testing/** text eol=lf

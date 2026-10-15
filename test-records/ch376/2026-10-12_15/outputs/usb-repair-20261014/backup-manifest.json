@@ -1,0 +1,10 @@
+{
+  "source": "\\\\.\\H:",
+  "mode": "GENERIC_READ only",
+  "scope": "complete H: partition; MBR excluded because PhysicalDrive access denied",
+  "bytes": 4026499072,
+  "sha256_stream": "2b04438a9499dfc53ff8ec3aa52eb6fb61ec2887ec526218c5502b912c81f419",
+  "partition_sector": 64,
+  "duration_seconds": 349.66,
+  "completed": true
+}

@@ -1,0 +1,33 @@
+{
+  "drive": "H:",
+  "mode": "read-only",
+  "bytes_per_sector": 512,
+  "sectors_per_cluster": 8,
+  "fat_copies": 2,
+  "fat_copies_equal": false,
+  "root_cluster": 2,
+  "allocated_clusters": 5,
+  "cluster_links": [
+    [
+      2,
+      268435455
+    ],
+    [
+      3,
+      268435455
+    ],
+    [
+      4,
+      268435455
+    ],
+    [
+      5,
+      268435455
+    ],
+    [
+      849923,
+      268435455
+    ]
+  ],
+  "record_fragments": []
+}

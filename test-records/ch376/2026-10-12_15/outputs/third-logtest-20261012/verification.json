@@ -1,0 +1,169 @@
+{
+  "TestProject": "F:\\ESP32\\niaio\\git\\third_logtest_20261012",
+  "Baseline": "F:\\ESP32\\niaio\\outputs\\third-logtest-20261012\\baseline",
+  "BuildExitCode": 0,
+  "FormalBaselineFilesChecked": 101,
+  "FormalMismatches": [],
+  "Regression": [
+    {
+      "suite": "monitor",
+      "test": "test_write_suspends_only_for_transaction",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_write_error_restores_capture_and_push",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_open_and_close_error_restore_guards",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_nested_guard_restores_only_outermost",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_idle_guard_does_not_arm_capture",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_owner_commands_and_snapshot",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_capacity_expiry_and_time_sync",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_key_uses_common_state_machine",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "monitor",
+      "test": "test_time_sync_does_not_change_effective_elapsed",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "mobile",
+      "test": "test_push_pause_keeps_session_and_control_acks",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "mobile",
+      "test": "test_pause_wins_snapshot_send_race",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "mobile",
+      "test": "run_tests",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "capture",
+      "test": "test_capture_guard_keeps_pending_intervals",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "capture",
+      "test": "test_capture_guard_preserves_paused_state",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "suite": "capture",
+      "test": "test_capture_guard_preserves_initial_idle",
+      "passed": true,
+      "failure_line": 0
+    }
+  ],
+  "CommandSequence": [
+    {
+      "case": "test_normal",
+      "baseline": 588938891,
+      "logtest": 588938891,
+      "passed": true
+    },
+    {
+      "case": "test_zero_progress",
+      "baseline": -664767814,
+      "logtest": -664767814,
+      "passed": true
+    },
+    {
+      "case": "test_oversize",
+      "baseline": 907949124,
+      "logtest": 907949124,
+      "passed": true
+    },
+    {
+      "case": "test_multiblock",
+      "baseline": -328861888,
+      "logtest": -328861888,
+      "passed": true
+    },
+    {
+      "case": "test_request_error",
+      "baseline": 147209669,
+      "logtest": 147209669,
+      "passed": true
+    },
+    {
+      "case": "test_wait_immediate",
+      "baseline": 0,
+      "logtest": 0,
+      "passed": true
+    },
+    {
+      "case": "test_wait_delayed",
+      "baseline": 0,
+      "logtest": 0,
+      "passed": true
+    },
+    {
+      "case": "test_wait_timeout",
+      "baseline": 0,
+      "logtest": 0,
+      "passed": true
+    }
+  ],
+  "Images": [
+    {
+      "Path": "third.bin",
+      "Bytes": 835872,
+      "SHA256": "D4E4F0D521A067561EA5FCED766A163A3CA6D080E3148B3F20231F1BCD1D6F38"
+    },
+    {
+      "Path": "bootloader/bootloader.bin",
+      "Bytes": 20832,
+      "SHA256": "8B4FEDC22678F84EF50F347DDCEC30B466875670AC8D78B5411B01AC428001BD"
+    },
+    {
+      "Path": "partition_table/partition-table.bin",
+      "Bytes": 3072,
+      "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820"
+    }
+  ],
+  "Flashed": false,
+  "PhysicalDeviceVerified": false,
+  "AdditionalSpiQueries": false
+}

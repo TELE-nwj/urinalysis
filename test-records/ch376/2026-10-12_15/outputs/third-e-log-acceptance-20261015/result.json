@@ -1,0 +1,173 @@
+{
+  "source": "G:\\新建文件夹\\串口日志_20261015_192927.log",
+  "bytes": 138944,
+  "sha256": "83594BDD4B5FB78731CF3757A58BD2601356F02FDEFB668AC1A6F1B3AA0D3510",
+  "checks": {
+    "version_e": true,
+    "only_one_create": true,
+    "one_fixed_session": true,
+    "header_readback_56": true,
+    "minute_readback_47": true,
+    "append_at_header_end": true,
+    "reopened_total_103": true,
+    "minute_write_success": true,
+    "no_error_lines": true,
+    "no_recreation": true,
+    "no_skipped_minute": true,
+    "pause_excluded_correctly": true,
+    "completed_data_in_valid_cluster": true
+  },
+  "log_side_passed": true,
+  "scope": "设备侧一次建文件、一次暂停继续及一分钟追加通过；已删TXT，电脑文件交叉核对未执行",
+  "states": [
+    {
+      "at_ms": 8674,
+      "from": "待开始",
+      "to": "测量中"
+    },
+    {
+      "at_ms": 24204,
+      "from": "测量中",
+      "to": "暂停"
+    },
+    {
+      "at_ms": 29024,
+      "from": "暂停",
+      "to": "测量中"
+    }
+  ],
+  "pauses": [
+    {
+      "pause_ms": 24204,
+      "resume_ms": 29024,
+      "duration_ms": 4820
+    }
+  ],
+  "minute1": {
+    "at_ms": 73474,
+    "row": "00:01:00          7.0ml           420.0ml/h  ",
+    "effective_ms": 59980
+  },
+  "create_commands": 1,
+  "readbacks": [
+    {
+      "requested": 56,
+      "read": 56,
+      "result": "一致"
+    },
+    {
+      "requested": 47,
+      "read": 47,
+      "result": "一致"
+    }
+  ],
+  "file_states": [
+    {
+      "stage": "创建成功、表头前",
+      "file": "/U0000001.TXT",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 0,
+      "offset": 0,
+      "buffer_lba": 16448,
+      "rw_lba": 16448
+    },
+    {
+      "stage": "字节写完成、关闭前",
+      "file": "未提供",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 56,
+      "offset": 56,
+      "buffer_lba": 16480,
+      "rw_lba": 16480
+    },
+    {
+      "stage": "打开成功后",
+      "file": "/U0000001.TXT",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 56,
+      "offset": 0,
+      "buffer_lba": 16448,
+      "rw_lba": 16448
+    },
+    {
+      "stage": "定位成功后",
+      "file": "未提供",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 56,
+      "offset": 0,
+      "buffer_lba": 16448,
+      "rw_lba": 16480
+    },
+    {
+      "stage": "打开成功后",
+      "file": "/U0000001.TXT",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 56,
+      "offset": 0,
+      "buffer_lba": 16448,
+      "rw_lba": 16448
+    },
+    {
+      "stage": "定位成功后",
+      "file": "未提供",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 56,
+      "offset": 56,
+      "buffer_lba": 16448,
+      "rw_lba": 16480
+    },
+    {
+      "stage": "字节写完成、关闭前",
+      "file": "未提供",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 103,
+      "offset": 103,
+      "buffer_lba": 16480,
+      "rw_lba": 16480
+    },
+    {
+      "stage": "打开成功后",
+      "file": "/U0000001.TXT",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 103,
+      "offset": 0,
+      "buffer_lba": 16448,
+      "rw_lba": 16448
+    },
+    {
+      "stage": "定位成功后",
+      "file": "未提供",
+      "dir_lba": 16448,
+      "start_cluster": 6,
+      "current_cluster": 6,
+      "bytes": 103,
+      "offset": 56,
+      "buffer_lba": 16448,
+      "rw_lba": 16480
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "W (348) spi_flash: Detected size(16384k) larger than the size in the binary image header(2048k). Using the size in the binary image header.",
+    "W (404) main: [写盘握手修复版] 20261015-E；数据交接不插入诊断命令/FAT预检/完成后校验与关闭回读/保留会话保护；仍需实机验收"
+  ],
+  "multiple_minute_append_tested": false,
+  "pc_file_verified": false,
+  "code_changed": false
+}

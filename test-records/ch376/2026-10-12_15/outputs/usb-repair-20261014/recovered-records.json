@@ -1,0 +1,44 @@
+[
+  {
+    "file": "REC0001.TXT",
+    "volume_sector": 15344,
+    "bytes": 56,
+    "directory_length": null,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n"
+  },
+  {
+    "file": "REC0002.TXT",
+    "volume_sector": 15352,
+    "bytes": 103,
+    "directory_length": null,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          7.5ml           450.0ml/h  \r\n"
+  },
+  {
+    "file": "REC0003.TXT",
+    "volume_sector": 15360,
+    "bytes": 103,
+    "directory_length": null,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          6.0ml           360.0ml/h  \r\n"
+  },
+  {
+    "file": "REC0004.TXT",
+    "volume_sector": 15368,
+    "bytes": 104,
+    "directory_length": null,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          26.0ml          1560.0ml/h  \r\n"
+  },
+  {
+    "file": "U0000001.TXT",
+    "volume_sector": 15376,
+    "bytes": 103,
+    "directory_length": 103,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          10.0ml          600.0ml/h  \r\n"
+  },
+  {
+    "file": "U0000002.TXT",
+    "volume_sector": 15384,
+    "bytes": 103,
+    "directory_length": 103,
+    "content": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.5ml           330.0ml/h  \r\n"
+  }
+]

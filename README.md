@@ -1,5 +1,11 @@
 # urinalysis
 
+## CH376 / third 测试归档（2026-10-12—15）
+
+[全部测试记录与当前验收状态](docs/testing/CH376-20261012-15.md) · [分支与工程版本关系图](docs/testing/REPOSITORY-GRAPH.md) · [E版测试固件](third_logtest_20261012/E版修复与烧录说明.md)
+
+覆盖16个阶段的原始日志、FAT/扇区证据、修复与回归、审查和固件快照。E版已通过本次一分钟设备侧写入回读，电脑文件/连续多分钟验收尚未闭环；`third/`正式基线另存，没有用测试固件覆盖。
+
 ## scend sol版本（2026-10-09）
 
 [完整软件与固件资料](scend%20sol%E7%89%88%E6%9C%AC/README.md) · [安卓 APK 1.1-v2](scend%20sol%E7%89%88%E6%9C%AC/android/niaio-mobile-v2-debug.apk) · [ESP32 工程与烧录说明](scend%20sol%E7%89%88%E6%9C%AC/esp32/README.md)

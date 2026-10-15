@@ -1,0 +1,117 @@
+{
+  "read_only": true,
+  "geometry": {
+    "sector_bytes": 512,
+    "cluster_sectors": 8,
+    "reserved_sectors": 1056,
+    "fat_sectors": 7664,
+    "fat_copies": 2,
+    "hidden_sectors": 64,
+    "actual_partition_sector": 64,
+    "ext_flags": 0,
+    "fat1_volume_start": 1056,
+    "fat2_volume_start": 8720,
+    "data_volume_start": 16384
+  },
+  "matches": [
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15392,
+      "physical_sector": 15456,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          3.5ml           210.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15400,
+      "physical_sector": 15464,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.0ml           300.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "时间(hh:mm:ss)",
+      "volume_sector": 15408,
+      "physical_sector": 15472,
+      "byte_in_sector": 0,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          3.0ml           180.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15392,
+      "physical_sector": 15456,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          3.5ml           210.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15400,
+      "physical_sector": 15464,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          5.0ml           300.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "00:01:00",
+      "volume_sector": 15408,
+      "physical_sector": 15472,
+      "byte_in_sector": 56,
+      "excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          3.0ml           180.0ml/h  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "U0000001TXT",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 32,
+      "excerpt": "���\u000f���\u000f���\u000f���\u000f���\u000f���\u000f\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0006\u0000g\u0000\u0000\u0000U0000002TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0007\u0000g\u0000\u0000\u0000U0000003TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\b\u0000g\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    },
+    {
+      "region": "fat-second.bin",
+      "token": "U0000002TXT",
+      "volume_sector": 15360,
+      "physical_sector": 15424,
+      "byte_in_sector": 64,
+      "excerpt": "���\u000f���\u000f���\u000f���\u000f���\u000f���\u000f\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000U0000001TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0006\u0000g\u0000\u0000\u0000U0000002TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\u0007\u0000g\u0000\u0000\u0000U0000003TXT \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000!0\b\u0000g\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+    }
+  ],
+  "root_entries": [
+    {
+      "short_name": "SYSTEM~1   ",
+      "attr": 22,
+      "cluster": 3,
+      "size": 0
+    },
+    {
+      "short_name": "FOUND   000",
+      "attr": 22,
+      "cluster": 6,
+      "size": 0
+    }
+  ],
+  "misplaced_directory_entries": [
+    {
+      "short_name": "U0000001TXT",
+      "volume_sector": 15360,
+      "byte_in_sector": 32,
+      "cluster": 6,
+      "size": 103,
+      "expected_data_volume_sector": 16416,
+      "raw_hex": "55 30 30 30 30 30 30 31 54 58 54 20 00 00 00 00 00 00 00 00 00 00 00 00 21 30 06 00 67 00 00 00"
+    },
+    {
+      "short_name": "U0000002TXT",
+      "volume_sector": 15360,
+      "byte_in_sector": 64,
+      "cluster": 7,
+      "size": 103,
+      "expected_data_volume_sector": 16424,
+      "raw_hex": "55 30 30 30 30 30 30 32 54 58 54 20 00 00 00 00 00 00 00 00 00 00 00 00 21 30 07 00 67 00 00 00"
+    }
+  ],
+  "fat_mismatch_sectors": 4
+}

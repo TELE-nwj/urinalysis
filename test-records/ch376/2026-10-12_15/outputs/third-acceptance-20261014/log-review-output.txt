@@ -1,0 +1,205 @@
+{
+  "source": "G:\\新建文件夹\\串口日志_20261014_112326.log",
+  "bytes": 145382,
+  "sha256": "b817b3823ac921bb696059e7ba3959020206c7063937eebd16cba37774300f7c",
+  "encoding": "utf-8-sig",
+  "sessions": [
+    {
+      "version_B": false,
+      "expected_data_lba": [],
+      "compatibility": [],
+      "new_files": [],
+      "minute_readback": [],
+      "readback_matches": 0,
+      "readback_failures": 0,
+      "write_blocks": [],
+      "panic": false
+    },
+    {
+      "version_B": true,
+      "expected_data_lba": [
+        16448
+      ],
+      "compatibility": [
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        },
+        {
+          "internal_base": 1088,
+          "data_lba": 16448,
+          "repeat": 16448,
+          "delta": 0,
+          "root_cluster": 2,
+          "sectors_per_cluster": 8,
+          "result": "通过",
+          "passed": true
+        }
+      ],
+      "new_files": [
+        "/U0000002.TXT"
+      ],
+      "minute_readback": [
+        {
+          "file": "/U0000002.TXT",
+          "expected_size": 103,
+          "append_offset": 56,
+          "text": "00:01:00          9.5ml           570.0ml/h  \r\n",
+          "passed": true
+        }
+      ],
+      "readback_matches": 2,
+      "readback_failures": 1,
+      "write_blocks": [],
+      "panic": false
+    }
+  ],
+  "usb_files_verified": false,
+  "replug_verified": false
+}

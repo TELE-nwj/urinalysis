@@ -1,0 +1,92 @@
+[
+  {
+    "suite": "monitor",
+    "test": "test_write_suspends_only_for_transaction",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_write_error_restores_capture_and_push",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_open_and_close_error_restore_guards",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_nested_guard_restores_only_outermost",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_idle_guard_does_not_arm_capture",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_owner_commands_and_snapshot",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_capacity_expiry_and_time_sync",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_key_uses_common_state_machine",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "monitor",
+    "test": "test_time_sync_does_not_change_effective_elapsed",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "mobile",
+    "test": "test_push_pause_keeps_session_and_control_acks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "mobile",
+    "test": "test_pause_wins_snapshot_send_race",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "mobile",
+    "test": "run_tests",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "capture",
+    "test": "test_capture_guard_keeps_pending_intervals",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "capture",
+    "test": "test_capture_guard_preserves_paused_state",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "suite": "capture",
+    "test": "test_capture_guard_preserves_initial_idle",
+    "passed": true,
+    "failure_line": 0
+  }
+]

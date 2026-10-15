@@ -1,0 +1,32 @@
+[
+  {
+    "File": "REC0001.TXT",
+    "Bytes": 56,
+    "Matched": true
+  },
+  {
+    "File": "REC0002.TXT",
+    "Bytes": 103,
+    "Matched": true
+  },
+  {
+    "File": "REC0003.TXT",
+    "Bytes": 103,
+    "Matched": true
+  },
+  {
+    "File": "REC0004.TXT",
+    "Bytes": 104,
+    "Matched": true
+  },
+  {
+    "File": "U0000001.TXT",
+    "Bytes": 103,
+    "Matched": true
+  },
+  {
+    "File": "U0000002.TXT",
+    "Bytes": 103,
+    "Matched": true
+  }
+]

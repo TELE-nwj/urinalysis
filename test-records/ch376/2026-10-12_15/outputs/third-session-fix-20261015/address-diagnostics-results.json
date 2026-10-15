@@ -1,0 +1,147 @@
+[
+  {
+    "case": "test_bpb_high_byte_and_absolute_lba",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_bad_signature",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_bad_cluster_size",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bpb_overflow",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_read_eight_chunks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_read_partial_failure",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_zero_progress_bounded",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_sector_oversize_consumed_rejected",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_var32_little_endian",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_lba",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_eof_is_valid",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_locate_bad_length",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_probe_remount_failure_stops",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bad_boot_remount_no_fake_geometry",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_cached_geometry_avoids_physical_read",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_reset_invalidates_geometry",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_correction_and_no_repeat",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_high_byte_mismatch_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_ready_wrong_base_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_new_chip_no_legacy_writes",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_legacy_root_open_failure_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_bad_data_base_blocks_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_directory_in_fat_blocks_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_valid_directory_allows_write",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_bytes_match",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_content_mismatch",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_zero_length_blocks",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_readback_closes_without_update",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "case": "test_partial_correction_blocks",
+    "passed": true,
+    "failure_line": 0
+  }
+]

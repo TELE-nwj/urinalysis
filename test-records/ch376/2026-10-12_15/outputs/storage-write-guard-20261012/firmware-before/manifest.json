@@ -1,0 +1,17 @@
+[
+  {
+    "Path": "third.bin",
+    "Bytes": 828688,
+    "SHA256": "B69439B320EAA030D4BAA34DEAE320E5759257B24A01548C72DF0029F8AA3E9C"
+  },
+  {
+    "Path": "bootloader/bootloader.bin",
+    "Bytes": 20832,
+    "SHA256": "A2C8EF73163C7AF5DBE782474B270164C3701D277379C4E577D37E8F85E2F5ED"
+  },
+  {
+    "Path": "partition_table/partition-table.bin",
+    "Bytes": 3072,
+    "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820"
+  }
+]

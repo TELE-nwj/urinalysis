@@ -1,0 +1,10 @@
+{
+  "OverallPassed": false,
+  "ExpectedDataLBA": 16448,
+  "PhysicalFilesMatch": true,
+  "MinuteBytesMatchLog": true,
+  "ReadbackFailures": 1,
+  "FatCopiesEqual": false,
+  "PauseEffectiveMs": 59990,
+  "SourceLog": "G:\\新建文件夹\\串口日志_20261014_112326.log"
+}

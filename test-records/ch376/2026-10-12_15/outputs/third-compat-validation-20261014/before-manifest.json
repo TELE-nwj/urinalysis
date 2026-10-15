@@ -1,0 +1,537 @@
+[
+  {
+    "Path": ".gitignore",
+    "SHA256": "A17D6E42E2A61BFF3A03302959DC1746D8DA0F27E5AC4E1A79B19EFBF1A09281",
+    "Bytes": 42
+  },
+  {
+    "Path": "日志测试说明.md",
+    "SHA256": "EC584B872D4DF318ED59405E48E430586FB7F956F8D6B99347C012D881DE005A",
+    "Bytes": 5091
+  },
+  {
+    "Path": "build.ps1",
+    "SHA256": "095B6D0DADB50EF54676DD34059CC2043BFD3866DCAFD460B51E38E5B27AFECB",
+    "Bytes": 226
+  },
+  {
+    "Path": "CMakeLists.txt",
+    "SHA256": "6C74464269B0BE6C2BDB31D0ABEBB114357D79EB5F77610F50E6381C57BBDBE3",
+    "Bytes": 241
+  },
+  {
+    "Path": "flash.ps1",
+    "SHA256": "7E37C527419D1BC109F44E39DEA00F9A39CE9A18AAA9964CB067B3D426F529D6",
+    "Bytes": 2292
+  },
+  {
+    "Path": "idf-env.ps1",
+    "SHA256": "05D99A5CCA56B24776A517D92FEED3900B0065CBAB8961DA26A1828C6B2FB3A4",
+    "Bytes": 1018
+  },
+  {
+    "Path": "README.md",
+    "SHA256": "8CE717543574D0DB6567656B6C75D85B0AEB37DFA671E75C5452EE616FA6498A",
+    "Bytes": 4248
+  },
+  {
+    "Path": "sdkconfig",
+    "SHA256": "81A17DCC2C3E7A653A5C30BD7A5824175E7A87FFA6B978DDBFDB52CC9F898F7C",
+    "Bytes": 67074
+  },
+  {
+    "Path": "sdkconfig.defaults",
+    "SHA256": "1E94E556FC7791B403790138A7A9ADDB2D96FDF308146D3F175B70A7461AFD5D",
+    "Bytes": 219
+  },
+  {
+    "Path": "firmware\\flash_args",
+    "SHA256": "E228EDC5BB5BB015CAAC24F0E3141EB9F3D49C8238D78D6A9E75FFB26067BAD4",
+    "Bytes": 146
+  },
+  {
+    "Path": "firmware\\flasher_args.json",
+    "SHA256": "C95D9EF4374657ADD725B3DB4BD25F7CBEF5CA34C5FE48C237A38170957EC421",
+    "Bytes": 925
+  },
+  {
+    "Path": "firmware\\manifest.json",
+    "SHA256": "554709315A0D96461904320491CBF6CCA00A799B1664F79F6B966798D3D6BFB8",
+    "Bytes": 467
+  },
+  {
+    "Path": "firmware\\SHA256SUMS.txt",
+    "SHA256": "554F74348DCD8EC47F7B6ECF159CF4A8317F798F6339B474F394AF7706390EB9",
+    "Bytes": 273
+  },
+  {
+    "Path": "firmware\\third.bin",
+    "SHA256": "11670AD3BD4CB6C00ADB4D18CF2A0C3381F773CD0F3374DE08F10A79684E5BE0",
+    "Bytes": 841424
+  },
+  {
+    "Path": "firmware\\bootloader\\bootloader.bin",
+    "SHA256": "8B4FEDC22678F84EF50F347DDCEC30B466875670AC8D78B5411B01AC428001BD",
+    "Bytes": 20832
+  },
+  {
+    "Path": "firmware\\partition_table\\partition-table.bin",
+    "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820",
+    "Bytes": 3072
+  },
+  {
+    "Path": "main\\CMakeLists.txt",
+    "SHA256": "36CD250DA0996CE27919C721B05D1D59042AB6010924660F620E1875CAE348B6",
+    "Bytes": 1371
+  },
+  {
+    "Path": "main\\Kconfig.projbuild",
+    "SHA256": "4F01FFC751BE0E13C8E338139DD02C6E4CB2F1AF55CBBE25FFF1495CC900519C",
+    "Bytes": 338
+  },
+  {
+    "Path": "main\\main.c",
+    "SHA256": "4DD6EFA57E5D800DB994E24F0463EF94D67632C3C17ED0F7CD3FE5F0CD1F6BC1",
+    "Bytes": 4090
+  },
+  {
+    "Path": "main\\README.md",
+    "SHA256": "E6FAF88D23838D32E1D08189DC62A042CECA6C9874EBA4D17A2968D6F964D63A",
+    "Bytes": 5982
+  },
+  {
+    "Path": "main\\app\\README.md",
+    "SHA256": "09B714673CB5D85300437AEC857CD6E4CD0A28145E2DFF2BE0AD8BB755C36F48",
+    "Bytes": 7078
+  },
+  {
+    "Path": "main\\app\\mobile\\mobile.c",
+    "SHA256": "9860C9DFA0EE9D42477CD8A69EA4F38E854CAD316F0DA8ED657BA2B65312ACC4",
+    "Bytes": 5540
+  },
+  {
+    "Path": "main\\app\\mobile\\mobile.h",
+    "SHA256": "A762CE2E9C0CCB0CF206293C92196BF0B7FF026D21836742345EE887132421E8",
+    "Bytes": 687
+  },
+  {
+    "Path": "main\\app\\monitor\\monitor.c",
+    "SHA256": "0F68D0FF96C148BB69D63022C3CB4225F636BE74ACC737EA202E51884F1BD95D",
+    "Bytes": 16398
+  },
+  {
+    "Path": "main\\app\\monitor\\monitor.h",
+    "SHA256": "7025E421D1BFBA54BF244F7A5B132B0C01B40AC5FAEDAFEEBC566423E9C36A48",
+    "Bytes": 1916
+  },
+  {
+    "Path": "main\\app\\S1\\S1.c",
+    "SHA256": "92A51E835B2BB1B8484CBE68CBF8910114363598FE0314E073AC6113A62B34B5",
+    "Bytes": 16257
+  },
+  {
+    "Path": "main\\app\\S1\\S1.h",
+    "SHA256": "5E90643D774D27C1AB831EE56612809FBBFFE3C195B3D142A3CDBF2EB6968CF7",
+    "Bytes": 1845
+  },
+  {
+    "Path": "main\\app\\S2\\S2.c",
+    "SHA256": "655164B8A5E94FDB2D1F9EB085A1D5B1BC9712A2FAE078AF7BBA556050E1E79C",
+    "Bytes": 742
+  },
+  {
+    "Path": "main\\app\\S2\\S2.h",
+    "SHA256": "BBB82DDE0CA6A59461135BFE7BD70CE0C53E35914F2E1712F7F85521850A2509",
+    "Bytes": 687
+  },
+  {
+    "Path": "main\\bsp\\err.h",
+    "SHA256": "C08C92AB5C32828ACFADFAABF05399F5EF0EF594D8D06863C8F168C4B6EE0C8A",
+    "Bytes": 712
+  },
+  {
+    "Path": "main\\bsp\\pin_map.h",
+    "SHA256": "C4D2116178C9BD8A1D7AD1D53CC2E1646B8198E60DC28614F45533C2BEF895CE",
+    "Bytes": 3971
+  },
+  {
+    "Path": "main\\bsp\\README.md",
+    "SHA256": "039AD4391F1F1F1E5F159999E64A3759ED3888C0440CB554F79C09D5A8983CC5",
+    "Bytes": 4831
+  },
+  {
+    "Path": "main\\driver\\README.md",
+    "SHA256": "B21DFD9F32E2C24947DDECB4489A3B1F5CDA9CE28C4192DCBB984BDAD8E8E42F",
+    "Bytes": 4460
+  },
+  {
+    "Path": "main\\driver\\battery\\battery.c",
+    "SHA256": "C9048FED9EF7301FA4579B0094A2FC9C86DBDBBADE66BB07A7A477D18797D18B",
+    "Bytes": 6321
+  },
+  {
+    "Path": "main\\driver\\battery\\battery.h",
+    "SHA256": "6952D34FA116B661E1993A053D9D684F650E980B7F17C2E5C79679C21AE8904C",
+    "Bytes": 1335
+  },
+  {
+    "Path": "main\\driver\\battery\\README.md",
+    "SHA256": "A1C30578E58309EBFB9C1DF4DC1586EBDE0D9ED24FDB5E94EB613F0FD3E6F0A6",
+    "Bytes": 3146
+  },
+  {
+    "Path": "main\\driver\\ch376\\ch376_diag.c",
+    "SHA256": "EF555F6763ED54C677B3315BD130CB5F35E43CEF11EDE6FEF4085AEDC830BC97",
+    "Bytes": 10354
+  },
+  {
+    "Path": "main\\driver\\ch376\\ch376_diag.h",
+    "SHA256": "85348A38195896F26B0F146CA73570ADB6428332E1A5EE39FAA4E1F2651B3AB7",
+    "Bytes": 369
+  },
+  {
+    "Path": "main\\driver\\ch376\\ch376_spi.c",
+    "SHA256": "E2AD836CA48A3A4C725E0512C80A5B59BAB2F20E6E9476EA899DBD629355B969",
+    "Bytes": 25190
+  },
+  {
+    "Path": "main\\driver\\ch376\\ch376_spi.h",
+    "SHA256": "52317C1764FCFB494F5F26651858884DBCAE420A7DFE079F34C0D2BED1903C87",
+    "Bytes": 10030
+  },
+  {
+    "Path": "main\\driver\\ch376\\README.md",
+    "SHA256": "85895C3EA6D46CB3A94DD46E77DB1C23678D26635A9B01A2D3449D2E25A58BC9",
+    "Bytes": 7165
+  },
+  {
+    "Path": "main\\driver\\drop\\drop.c",
+    "SHA256": "EEED80930383EA14DD79663A24326EBF59CBC9321190044B79649A0813D0B35E",
+    "Bytes": 5940
+  },
+  {
+    "Path": "main\\driver\\drop\\drop.h",
+    "SHA256": "364C0B46E0BD1FFCB1AD8057346DC0A29856B64EE0240097B55DF1FE08721A68",
+    "Bytes": 2814
+  },
+  {
+    "Path": "main\\driver\\drop\\README.md",
+    "SHA256": "E5B74E236760B5FB0AAA5D26599C66F19F479EEDF8B7367817B873F931D5542D",
+    "Bytes": 4572
+  },
+  {
+    "Path": "main\\driver\\key\\key.c",
+    "SHA256": "3B712284D77A7A2C5EBDA86051589AD6B5F469DCBBE43A38D0F75A895267E197",
+    "Bytes": 2333
+  },
+  {
+    "Path": "main\\driver\\key\\key.h",
+    "SHA256": "2E95B7195ECD349D77AB8DBD2EA023F5ECEB62440EA7B1B1E14B209F63325D18",
+    "Bytes": 1105
+  },
+  {
+    "Path": "main\\driver\\key\\README.md",
+    "SHA256": "BF6B47DBDE9B1C61772D08F1A49939A3443AACAC54A18A9E292AC147D9F421E6",
+    "Bytes": 2385
+  },
+  {
+    "Path": "main\\driver\\mobile_link\\mobile_link.c",
+    "SHA256": "1B1C791F110AEC5D5201F3AC76324867BDA9D69B61B73D42F196F5AFB6007AE9",
+    "Bytes": 12261
+  },
+  {
+    "Path": "main\\driver\\mobile_link\\mobile_link.h",
+    "SHA256": "056BA31412DB6649BE39E0BA2A1B596F369BED0D4FE15D6E2E3E5F2EBDDF6C30",
+    "Bytes": 2260
+  },
+  {
+    "Path": "main\\driver\\screen_uart\\README.md",
+    "SHA256": "3DDB587845720256DC25C58399CBD0E09DDDDCB7FD7B04CDEF20433149B126FA",
+    "Bytes": 4807
+  },
+  {
+    "Path": "main\\driver\\screen_uart\\screen_uart.c",
+    "SHA256": "CF5D7F402969382C1AD98000B8F44D7AD5FDBDAC159FB2733D0937525D53F5F6",
+    "Bytes": 4194
+  },
+  {
+    "Path": "main\\driver\\screen_uart\\screen_uart.h",
+    "SHA256": "D60922B28BE6FA88C8D47920F0F6AA00CAC0D07DB289E105CC2C27BE7E3CBA50",
+    "Bytes": 1692
+  },
+  {
+    "Path": "main\\driver\\time_svc\\README.md",
+    "SHA256": "31DE70D8D7F6CD003F2AF620E7AABE18947B1A6B5D90D2A0A47876A51FB30656",
+    "Bytes": 1227
+  },
+  {
+    "Path": "main\\driver\\time_svc\\time_svc.c",
+    "SHA256": "F9BB86807B0F399D72D80F92DC4C9DB6EDDFA34556B1C0AAD36214937482B555",
+    "Bytes": 517
+  },
+  {
+    "Path": "main\\driver\\time_svc\\time_svc.h",
+    "SHA256": "EA27D401DB652EF5117FDA8D3F5E0123C22F9A4ECD6FA5EC94CD4143EE7801B2",
+    "Bytes": 707
+  },
+  {
+    "Path": "main\\driver\\walltime\\README.md",
+    "SHA256": "8A09289B0B14A57342911C6C3B591BEA83421FAFDD6E182EFD65F20172D779EF",
+    "Bytes": 3448
+  },
+  {
+    "Path": "main\\driver\\walltime\\walltime.c",
+    "SHA256": "7EC432F28A6D60D9E5E2D0BF4071D3E9DB28EDA3A07D64F269DAF7D318079C55",
+    "Bytes": 6008
+  },
+  {
+    "Path": "main\\driver\\walltime\\walltime.h",
+    "SHA256": "648175E55D59E0F751FB33EE3EA98910E5BEDC026DBC0549A9D83412FAFB1945",
+    "Bytes": 1560
+  },
+  {
+    "Path": "main\\driver\\wifi\\wifi.c",
+    "SHA256": "EE200D6310A15CCC8BDE30C7DBB237E37952CAC2E81057DE9D39BCABCE74CC12",
+    "Bytes": 5516
+  },
+  {
+    "Path": "main\\driver\\wifi\\wifi.h",
+    "SHA256": "7A6D6DE24253BC658E409744F75E6C8B9ADD5BCDDB8D268DABEC3D534911963A",
+    "Bytes": 1021
+  },
+  {
+    "Path": "main\\service\\README.md",
+    "SHA256": "0F8FBBFDF188B5CBADB2821CB4233CFD90B7DEC915A0B1B0FA612B222FED844C",
+    "Bytes": 2015
+  },
+  {
+    "Path": "main\\service\\clock\\clock.c",
+    "SHA256": "8C1E3DC700BD5635323A55286ED78DDACE4AD9817384195421F4F82281BB53BC",
+    "Bytes": 2000
+  },
+  {
+    "Path": "main\\service\\clock\\clock.h",
+    "SHA256": "ABE99B09BEEA302AB40A4EB376644F6485E0593005E8A50DE35BB24235F7846C",
+    "Bytes": 1184
+  },
+  {
+    "Path": "main\\service\\input\\input.c",
+    "SHA256": "D196E8E9A4901BD2DD2A20602F1D3262C1D75C55FF3EB466265441475623592E",
+    "Bytes": 2685
+  },
+  {
+    "Path": "main\\service\\input\\input.h",
+    "SHA256": "9BF965F4D2EF8F2B96D61DC88BDB40D6122FE04BF4F8627EC9F7CFE2A375E8E2",
+    "Bytes": 1391
+  },
+  {
+    "Path": "main\\service\\mobile\\mobile.c",
+    "SHA256": "1EA225D79B317645DE3B4C6E06C79CFF229D316B7E6F15083C70441F72FD3180",
+    "Bytes": 21370
+  },
+  {
+    "Path": "main\\service\\mobile\\mobile.h",
+    "SHA256": "CEACE6F81C018EF9CBE5DCCE662021C5CB9E06889797D0F9B18BF5CE07A78132",
+    "Bytes": 2835
+  },
+  {
+    "Path": "main\\service\\power\\power.c",
+    "SHA256": "2B15F55A118CC307D6F4DC5E3107A81C16368A350AFF9E7D03C9893CD15E8A84",
+    "Bytes": 8821
+  },
+  {
+    "Path": "main\\service\\power\\power.h",
+    "SHA256": "39EB92E1A66B75833F4FA731E2A8ACC10B88D673856557E04C734A141BD222D2",
+    "Bytes": 1752
+  },
+  {
+    "Path": "main\\service\\screen\\README.md",
+    "SHA256": "CCFD8CCE41F35E4519977C39947BC85FAAE9CF18494206426159F3DA7E5CFABD",
+    "Bytes": 4161
+  },
+  {
+    "Path": "main\\service\\screen\\screen.c",
+    "SHA256": "E6995508E12825D2FB3A7D5656AD0EC4870D2CFAEB1BCFAD2E12966EAF137C69",
+    "Bytes": 6979
+  },
+  {
+    "Path": "main\\service\\screen\\screen.h",
+    "SHA256": "6F2DC8BEA46E4D3AD0C240F07F4CB0093A97B8050E2D72912FF0BDA1C749B38F",
+    "Bytes": 3159
+  },
+  {
+    "Path": "main\\service\\storage\\README.md",
+    "SHA256": "8F93CA64D1868C3043F229BBBF8C191216E985B41C30BE4E002F33FFF502DC9A",
+    "Bytes": 4692
+  },
+  {
+    "Path": "main\\service\\storage\\storage.c",
+    "SHA256": "B3F0407EB75DBD6DBA4DD4AC00DC147C483EBF6F0AD56B505E148E38D19D360B",
+    "Bytes": 19121
+  },
+  {
+    "Path": "main\\service\\storage\\storage.h",
+    "SHA256": "4ECB324C978BE641B0BE0D55ED0A7B3FF280096E9C6E9B81B38FE67844885779",
+    "Bytes": 3109
+  },
+  {
+    "Path": "main\\service\\urine\\README.md",
+    "SHA256": "74615F07CECE10D2A5E3978DD5CB1FD9E1D7351634CC155AA0B393473D83786A",
+    "Bytes": 6563
+  },
+  {
+    "Path": "main\\service\\urine\\urine.c",
+    "SHA256": "31CAAF041CF0D80E2AA1810D09AF22F5978D20657A7E5E56957E669B171601BA",
+    "Bytes": 4874
+  },
+  {
+    "Path": "main\\service\\urine\\urine.h",
+    "SHA256": "8FE374F20A45EEF6EB80E174659FBB75C00484F38DB650E0DE897E295482A3BF",
+    "Bytes": 3837
+  },
+  {
+    "Path": "reports\\build.log",
+    "SHA256": "3A4274A1D1EA827BEE9C5FE178B68FE9033F1C278D7D16659000F27150645D02",
+    "Bytes": 120611
+  },
+  {
+    "Path": "reports\\delivery-verification.md",
+    "SHA256": "4A5D592450AE0175705C5F7F3FDC276373F61B4C5781B32319910856D8F9707F",
+    "Bytes": 3273
+  },
+  {
+    "Path": "reports\\image-info.txt",
+    "SHA256": "78FC5A95DAE3041DFB706247178B98C88591C1BDCA0DF48F44DE787864C022A4",
+    "Bytes": 698
+  },
+  {
+    "Path": "reports\\partition-table.txt",
+    "SHA256": "27356CA9AD0FAF176CF39289E9F579A1DD572F3E91888CE0BFF1BD20A64EB2D9",
+    "Bytes": 215
+  },
+  {
+    "Path": "reports\\script-validation.txt",
+    "SHA256": "2952540E14357E7CEB0E6E0B852527407569845E51FCBBFEE2C4C9CFDDE70B23",
+    "Bytes": 148
+  },
+  {
+    "Path": "reports\\source-comparison.json",
+    "SHA256": "9FE3E68C836132B09F725F3D95F7F5F9ADFC961C5BFFA24488617503BCF4EE9F",
+    "Bytes": 15381
+  },
+  {
+    "Path": "reports\\storage-write-guard-20261012.md",
+    "SHA256": "E2E17B194C49264E49CBFC38793A747EA0719394DFFD2EB42672C401980A0EC2",
+    "Bytes": 705
+  },
+  {
+    "Path": "tests\\address-diagnostics\\fixture.c",
+    "SHA256": "163324EE1E745A2E888378B302228E7EFE31DD40AF6FC865C3A1A5A385A08EFE",
+    "Bytes": 4862
+  },
+  {
+    "Path": "tests\\address-diagnostics\\run_tests.py",
+    "SHA256": "47BC9B3A1A4E505DEE1AC5EC6E8EFB74F9F36CD1B63DBE44F2B8BA92B6C1B05B",
+    "Bytes": 1730
+  },
+  {
+    "Path": "tests\\log-sequence\\run_tests.py",
+    "SHA256": "AC78F5370EF8915A92AD2B4035F61B21E2737199B34380225DE590911F09ACE5",
+    "Bytes": 4609
+  },
+  {
+    "Path": "tests\\storage-write-guard\\.gitignore",
+    "SHA256": "03824949A66AB6DB1429BD078D10D1BC2D75706AA1B756C547F9A7FF541C77CB",
+    "Bytes": 21
+  },
+  {
+    "Path": "tests\\storage-write-guard\\capture_test.c",
+    "SHA256": "D2DDC0FB2A29CC4D13952B65ACF0CD2C62CEC595D1DAD4069072856CE7298C85",
+    "Bytes": 1458
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile_test.c",
+    "SHA256": "CBF9ED36F016E2CDA9694570CBB0EC6D4CFB04607F5493C5E3E1149BBAC9EAE7",
+    "Bytes": 15186
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor_test.c",
+    "SHA256": "792A083CB8701923BABA3E9690F19DBD901C382A3886D1DCE7274625803B448A",
+    "Bytes": 13515
+  },
+  {
+    "Path": "tests\\storage-write-guard\\README.md",
+    "SHA256": "9127E88E9BA96694D1D0BEE00BCEEC61481838E7C8F5F1C1D8F4688F5CBD92B1",
+    "Bytes": 883
+  },
+  {
+    "Path": "tests\\storage-write-guard\\run_tests.py",
+    "SHA256": "2C56C4BE3211CD4C2EB69C31512F62E2E0336E26423A0B986A0A4EC77E0ADB88",
+    "Bytes": 2170
+  },
+  {
+    "Path": "tests\\storage-write-guard\\rv32_host.py",
+    "SHA256": "6D6BDDEC0CADD22871A4FBBDC058C9CB57639F40DE1A842CA2BCD1C0B5470944",
+    "Bytes": 6800
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\esp_random.h",
+    "SHA256": "A8380F773C8FCE1B3F925C4D07F70C4E3FC1563880190BBD64123420B00980F0",
+    "Bytes": 47
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\math.h",
+    "SHA256": "B703B5A250C7B4496D0B1878F55B4F55BC052EA74D26C82717DD2D1F4123CB78",
+    "Bytes": 42
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\stdio.h",
+    "SHA256": "AE0E5C96A075E8DA0479DA0710293D05D65C3AB920A653CDD6434F4E8FE393C2",
+    "Bytes": 66
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\string.h",
+    "SHA256": "180A2552D94D88F33CB9F41EE3365655430309ABB4E4979509A1244DA33792E8",
+    "Bytes": 209
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\freertos\\FreeRTOS.h",
+    "SHA256": "F7DDBF8DE1A57C317FB94DCE8CBE2C04151E704BC2F088D506726A61B9A0AC4F",
+    "Bytes": 126
+  },
+  {
+    "Path": "tests\\storage-write-guard\\mobile-stubs\\freertos\\semphr.h",
+    "SHA256": "316A5227E46D75AACCC8217D05BDD0BE0B3EE5BC2D27EBB23873645B2B954441",
+    "Bytes": 199
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\esp_log.h",
+    "SHA256": "99C47F5270BF893B786205EFFBDE969058EC77783F2D8F994CB2F4910A592306",
+    "Bytes": 371
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\esp_timer.h",
+    "SHA256": "82A7C14ACF5D1CDCBEA1B23BAB880C69562DA88013ADC34FF5F2AE2115FB08D1",
+    "Bytes": 67
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\driver\\ch376\\ch376_spi.h",
+    "SHA256": "62B3BBB0D0EC8595DA7F4BC073222DDE7654BF5A027A1FD0E1FA4D097C1B960F",
+    "Bytes": 624
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\freertos\\FreeRTOS.h",
+    "SHA256": "DDFBE2BB2A53950561AC0C9F5FA0E01DFA0F3568EE6D371D9F937283530DF080",
+    "Bytes": 357
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\freertos\\semphr.h",
+    "SHA256": "6EAA1BBC961DA56637009D56BF4869381B8D5FEB547004EB2D247B262D2C1FB7",
+    "Bytes": 229
+  },
+  {
+    "Path": "tests\\storage-write-guard\\monitor-stubs\\freertos\\task.h",
+    "SHA256": "B52C4BA72BCD7B354C3C30C1A0EFEBAA8627C21212E84580B05C31CCCDA88DFF",
+    "Bytes": 217
+  }
+]

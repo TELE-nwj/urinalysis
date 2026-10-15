@@ -1,0 +1,8 @@
+{
+  "DiskNumber": 1,
+  "FriendlyName": "General UDisk",
+  "BusType": "USB",
+  "DiskSize": 4026531840,
+  "Offset": 32768,
+  "PartitionSize": 4026499072
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "Name": "FOUND.000",
+    "Attributes": 22,
+    "Length": null
+  },
+  {
+    "Name": "System Volume Information",
+    "Attributes": 22,
+    "Length": null
+  },
+  {
+    "Name": "U0000001.TXT",
+    "Attributes": 32,
+    "Length": 56
+  },
+  {
+    "Name": "U0000002.TXT",
+    "Attributes": 32,
+    "Length": 103
+  }
+]

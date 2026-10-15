@@ -1,0 +1,181 @@
+{
+  "identity": {
+    "DiskNumber": 1,
+    "FriendlyName": "General UDisk",
+    "BusType": "USB",
+    "DiskSize": 4026531840,
+    "Offset": 32768,
+    "PartitionSize": 4026499072
+  },
+  "access": "GENERIC_READ only",
+  "files": [
+    {
+      "name": "U0000001.TXT",
+      "root_byte_offset": 320,
+      "entry_hex": "55 30 30 30 30 30 30 31 54 58 54 20 00 00 00 00 00 00 4f 5d 00 00 00 00 21 30 07 00 38 00 00 00",
+      "cluster": 7,
+      "bytes": 56,
+      "valid_start_cluster": true,
+      "first_cluster_lba": 16488,
+      "first_cluster_utf8_excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n",
+      "fat_link": 268435455,
+      "windows_read": "success",
+      "read_bytes": 56,
+      "sha256": "3d7398dc2180fe02cdd5b3c0a4a9fe54ef407ad8a498dc585a102b16342c7abf",
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n"
+    },
+    {
+      "name": "U0000002.TXT",
+      "root_byte_offset": 352,
+      "entry_hex": "55 30 30 30 30 30 30 32 54 58 54 20 00 00 00 00 00 00 4f 5d 00 00 00 00 21 30 08 01 67 00 00 00",
+      "cluster": 264,
+      "bytes": 103,
+      "valid_start_cluster": true,
+      "first_cluster_lba": 18544,
+      "first_cluster_utf8_excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          9.5ml           570.0ml/h  \r\n",
+      "fat_link": 268435455,
+      "windows_read": "success",
+      "read_bytes": 103,
+      "sha256": "7065b503160808177d09a216a90f6f8a07497fbf7bdc855a8d560802f59ecd16",
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          9.5ml           570.0ml/h  \r\n"
+    },
+    {
+      "name": "U0000003.TXT",
+      "root_byte_offset": 384,
+      "entry_hex": "55 30 30 30 30 30 30 33 54 58 54 20 00 00 00 00 00 00 00 00 00 00 00 00 21 30 00 00 38 00 00 00",
+      "cluster": 0,
+      "bytes": 56,
+      "valid_start_cluster": false,
+      "windows_read": "failed",
+      "error": "[Errno 22] Invalid argument",
+      "winerror": null
+    }
+  ],
+  "data_volume_sector": 16384,
+  "data_absolute_lba": 16448,
+  "fat_first_entries": [
+    [
+      268435455,
+      2147483647,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      268435455,
+      2147483647,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      268435455,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "fat_mismatch_sectors": [
+    6640,
+    6672,
+    6680,
+    6688,
+    7648
+  ],
+  "root_chain": [
+    2
+  ],
+  "suspect_lba16432_header_offset": 0,
+  "suspect_lba16432_first_96_hex": "e6 97 b6 e9 97 b4 28 68 68 3a 6d 6d 3a 73 73 29 20 20 20 20 e5 b0 bf e9 87 8f 28 6d 6c 29 20 20 20 20 e5 b9 b3 e5 9d 87 e6 b5 81 e9 80 9f 28 6d 6c 2f 68 29 20 20 0d 0a 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+  "suspect_lba16432_excerpt": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+  "comparison_with_B": [
+    {
+      "copy": 1,
+      "changed_sectors_since_B_snapshot": [
+        0
+      ],
+      "old_first_16_hex": "00 00 00 00 ff ff ff ff ff ff ff 0f ff ff ff 0f",
+      "new_first_16_hex": "ff ff ff 0f ff ff ff 7f ff ff ff 0f ff ff ff 0f"
+    },
+    {
+      "copy": 2,
+      "changed_sectors_since_B_snapshot": [
+        0,
+        7648
+      ],
+      "old_first_16_hex": "00 00 00 00 ff ff ff ff ff ff ff 0f ff ff ff 0f",
+      "new_first_16_hex": "ff ff ff 0f ff ff ff 7f ff ff ff 0f ff ff ff 0f"
+    }
+  ],
+  "log_summary": {
+    "locked_files": [
+      "/U0000003.TXT"
+    ],
+    "create_commands": 1,
+    "header_write_commands": 1,
+    "new_file_ready": 0,
+    "minutes_skipped": [
+      "1",
+      "2",
+      "3"
+    ],
+    "monitor_transitions": [
+      [
+        "9353",
+        "待开始",
+        "测量中"
+      ],
+      [
+        "30493",
+        "测量中",
+        "暂停"
+      ],
+      [
+        "30973",
+        "暂停",
+        "测量中"
+      ],
+      [
+        "85353",
+        "测量中",
+        "暂停"
+      ],
+      [
+        "85663",
+        "暂停",
+        "测量中"
+      ],
+      [
+        "89863",
+        "测量中",
+        "暂停"
+      ],
+      [
+        "92643",
+        "暂停",
+        "测量中"
+      ]
+    ],
+    "recovery_failures": 34,
+    "new_creations_in_recovery": 0,
+    "suspicious_write": [
+      "I (8853) CH376地址: [文件地址] 阶段=字节写完成、关闭前 文件=未提供 目录绝对LBA=16448 首簇=0 当前簇=0 文件长度=56 指针=56 缓冲LBA=16432 当前读写LBA=16432"
+    ]
+  }
+}

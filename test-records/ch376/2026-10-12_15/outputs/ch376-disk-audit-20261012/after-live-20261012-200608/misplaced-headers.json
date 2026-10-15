@@ -1,0 +1,12 @@
+{
+  "data_area_first_sector": 16384,
+  "fat2_first_sector": 8720,
+  "fat_size_sectors": 7664,
+  "headers_inside_fat2": [
+    {
+      "fat2_byte_offset": 3403776,
+      "volume_sector": 15368,
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          26.0ml          1560.0"
+    }
+  ]
+}

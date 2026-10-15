@@ -1,0 +1,66 @@
+{
+  "version": "20261015-C",
+  "build_succeeded": true,
+  "image_marker_verified": true,
+  "test_suites": {
+    "会话联合回归": {
+      "passed": 14,
+      "evidence": "git\\third_logtest_20261012\\tests\\session-files\\.build\\green-results.json"
+    },
+    "控制与写盘保护": {
+      "passed": 15,
+      "evidence": "git\\third_logtest_20261012\\tests\\storage-write-guard\\.build\\results.json"
+    },
+    "地址兼容与回读": {
+      "passed": 29,
+      "evidence": "git\\third_logtest_20261012\\tests\\address-diagnostics\\.build\\results.json"
+    },
+    "存储服务": {
+      "passed": 8,
+      "evidence": "git\\third_logtest_20261012\\tests\\address-diagnostics\\.build\\storage-results.json"
+    },
+    "字节写与等待": {
+      "passed": 9,
+      "evidence": "git\\third_logtest_20261012\\tests\\log-sequence\\.build\\results.json"
+    }
+  },
+  "total_current_passed": 75,
+  "new_regression_red_total": 14,
+  "new_regression_red_failures": 10,
+  "formal_baseline_files_unchanged": 101,
+  "before_backup_verified": 110,
+  "images": [
+    {
+      "Path": "bootloader/bootloader.bin",
+      "Offset": "0x0",
+      "Bytes": 20832,
+      "SHA256": "8B4FEDC22678F84EF50F347DDCEC30B466875670AC8D78B5411B01AC428001BD"
+    },
+    {
+      "Path": "third.bin",
+      "Offset": "0x10000",
+      "Bytes": 845696,
+      "SHA256": "136845574616991B93599046CBE1B85FF0A13B65E856EA520ABA9262D91B75E1"
+    },
+    {
+      "Path": "partition_table/partition-table.bin",
+      "Offset": "0x8000",
+      "Bytes": 3072,
+      "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820"
+    }
+  ],
+  "changed_or_added_text_files": [
+    "main\\app\\monitor\\monitor.c",
+    "main\\app\\README.md",
+    "main\\app\\S1\\S1.c",
+    "main\\main.c",
+    "main\\service\\storage\\README.md",
+    "main\\service\\storage\\storage.c",
+    "main\\service\\storage\\storage.h",
+    "tests\\address-diagnostics\\storage_fixture.c",
+    "tests\\session-files\\run_tests.py",
+    "tests\\session-files\\session_model.c",
+    "日志测试说明.md"
+  ],
+  "hardware_acceptance": "未执行；已有文件偶发0x42及首簇异常仍待实机定位"
+}

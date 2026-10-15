@@ -1,0 +1,14 @@
+﻿{
+    "Started":  "2026-10-14T10:16:44.8661863+08:00",
+    "Target":  "H:",
+    "Completed":  true,
+    "Formatted":  false,
+    "BackupSHA256":  "2B04438A9499DFC53FF8EC3AA52EB6FB61EC2887EC526218C5502B912C81F419",
+    "RepairExitCode":  1,
+    "CheckExitCode":  0,
+    "RecoveredRecords":  6,
+    "RecoveryDirectory":  "H:\\Recovered_20261014",
+    "ReadWriteVerified":  true,
+    "FinalCheckExitCode":  0,
+    "Finished":  "2026-10-14T10:17:00.0727423+08:00"
+}

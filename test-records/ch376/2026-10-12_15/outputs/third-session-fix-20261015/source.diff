@@ -1,0 +1,527 @@
+--- before/main/app/monitor/monitor.c
++++ current/main/app/monitor/monitor.c
+@@ -237,6 +237,8 @@
+         break;
+ 
+     case APP_PAUSED:
++        ESP_LOGI(TAG, "[会话控制] 暂停后继续，沿用文件=%s，不调用新建入口",
++                 *S1_session_file() ? S1_session_file() : "尚未分配");
+         S1_enter();                   /* 计时基准=此刻(暂停期间不计时) */
+         urine_capture_arm();          /* 清旧间隔 + 打开滴落中断，继续采集 */
+         set_state(APP_MEASURING);
+--- before/main/app/README.md
++++ current/main/app/README.md
+@@ -53,6 +53,7 @@
+ - 每分钟（`s_elapsed_ms / 60000`）写一行到 U 盘：`时间(hh:mm:ss) + 本分钟尿量(ml) + 本分钟平均流速(ml/h)`，平均流速 = 本分钟尿量 × 60。
+ - 写盘临界区（`s1_crit_enter()` / `s1_crit_exit()`）：拿 CH376 的**递归** SPI 互斥锁，`take`/`give`每层配对；仅最外层保存/恢复原采集状态、推送与日志等级。事务期间**临时关闭液滴中断**、暂停串口屏及手机状态推送；Wi-Fi连接、握手与命令ACK保持。`storage`保留INFO阶段日志，`CH376T`保留WARN/ERROR，退出后恢复原日志等级。完成后明确打印“第N分钟已写入U盘”，失败指出打开/写入/关闭阶段。临时恢复不清滴间隔/缓冲，不误开启待开始或暂停状态的采集。这里使用互斥量，不关闭RTOS调度；中断关闭期间落滴可能丢失。
+ - 掉盘容错：写盘失败或盘未就绪时置 `s_storage_ok=false`，每 `STORAGE_RETRY_MS = 5000 ms` 重试一次（有会话名就 `storage_ensure_session()` 恢复，没有就 `storage_create_session()` 新分配），期间照常计量；重试失败同样在区外补报 `恢复会话/新建文件失败(err=<码> <文本>)`。
++- 20261015-C会话保护：存储层在首次创建命令前返回编号，即使关闭/回读失败也保留。暂停继续不释放编号、不新建；恢复及追加找不到文件时禁止自动重建覆盖。只有检测复位后，下一次开始才进入新检测分配入口。开始时没盘且尚未分配编号的检测，后续插盘仍可首次分配。
+ - 推屏节流 `S1_UI_PERIOD_MS = 200u`（20 ms 周期下约 5 Hz）。`S1_push_values()` 只推 4 个数值/时间控件，暂停冻结、复位归零、进入测量时对齐都复用它。
+ - 对外接口（`S1.h`）：`S1_enter()`、`S1_run()`、`S1_reset()`、`S1_settle()`、`S1_push_values()`、`S1_storage_start()`、`S1_storage_stop()`、`S1_session_file()`、`S1_day_alert()`。
+ 
+--- before/main/app/S1/S1.c
++++ current/main/app/S1/S1.c
+@@ -263,7 +263,8 @@
+     }
+ }
+ 
+-/* 掉盘后每 5 秒重试一次：有会话名就恢复它，没有就新分配一个 */
++/* 掉盘后每 5 秒重试一次：标识锁定后只恢复同一文件。
++ * 尚未选定编号（如开始时没有U盘）才允许尝试首次分配。 */
+ static void storage_retry(uint64_t now_ms)
+ {
+     err_t e;
+@@ -272,6 +273,9 @@
+     if (s_storage_ok || now_ms < s_next_retry_ms) return;
+ 
+     resume = (*s_session != '\0');
++    ESP_LOGI(TAG, "[会话重试] 原因=%s 文件=%s；已分配的检测禁止换号或自动重建",
++             resume ? "验证或追加失败，恢复原文件" : "尚未分配文件，首次分配",
++             resume ? s_session : "未分配");
+     ESP_LOGI(TAG, ">>>>> 进入临界区: %s测量文件", resume ? "恢复" : "新建");
+     s1_crit_enter();
+     e = resume ? storage_ensure_session(s_session)
+@@ -283,14 +287,17 @@
+     if (s_storage_ok) {
+         ESP_LOGI(TAG, "<<<<< 退出临界区: 测量文件 /%s.TXT 已就绪", s_session);
+     } else {
+-        ESP_LOGW(TAG, "<<<<< 退出临界区: %s失败(错误码=%d %s)，U盘仍不可用，继续计量，%u秒后重试",
++        ESP_LOGW(TAG, "<<<<< 退出临界区: %s失败(错误码=%d %s)，继续计量，%u秒后重试",
+                  resume ? "恢复会话" : "新建文件", (int)e, err_text(e),
+                  (unsigned)(STORAGE_RETRY_MS / 1000ULL));
++        ESP_LOGW(TAG, "[会话保护] 当前文件=%s；已锁定时仅恢复，不自动重建。若文件缺失或表头损坏，请保留日志后复位开启新检测",
++                 *s_session ? s_session : "尚未分配");
+     }
+ }
+ 
+ void S1_storage_start(void)
+ {
++    ESP_LOGI(TAG, "[会话控制] 新检测分配入口，上一标识=%s", *s_session ? s_session : "无");
+     s_session[0] = '\0';
+     s_storage_ok = false;
+     s_next_retry_ms = 0;
+@@ -299,6 +306,7 @@
+ 
+ void S1_storage_stop(void)
+ {
++    ESP_LOGI(TAG, "[会话控制] 复位结束当前检测，释放标识=%s", *s_session ? s_session : "无");
+     s_session[0] = '\0';
+     s_storage_ok = false;
+     s_next_retry_ms = 0;
+--- before/main/main.c
++++ current/main/main.c
+@@ -39,7 +39,7 @@
+     ESP_LOGI(TAG, "=================================================");
+     ESP_LOGI(TAG, "尿量计启动  分层版  编译于 %s %s", __DATE__, __TIME__);
+     ESP_LOGI(TAG, "功能: 两键三态 + 串口屏 + 每分钟写U盘 + 电量/时间");
+-    ESP_LOGW(TAG, "[写盘兼容验证版] 20261014-B；旧版本兼容前后/错误地址拦截/关闭后内容回读；仍需电脑验证文件");
++    ESP_LOGW(TAG, "[会话文件修复版] 20261015-C；创建前锁定编号/恢复追加禁止重建/保留兼容处理与内容回读；仍需实机验收");
+     ESP_LOGI(TAG, "=================================================");
+ 
+     /* ---- service 初始化（底层硬件在各自 init 内部完成） ---- */
+--- before/main/service/storage/README.md
++++ current/main/service/storage/README.md
+@@ -1,6 +1,8 @@
+ # service/storage：按测量编号保存记录
+ 
+ 每个新测量分配一个独立文件：从 `/U0000001.TXT` 起按编号扫描 U 盘上已存在的文件，取第一个空号（`storage_create_session()`，编号上限 `/U9999999.TXT`），写入表头后关闭。暂停后继续沿用同一文件。
++
++20261015-C：编号在首次发送创建命令前锁定；即使创建回复、关闭或校验失败，也不会重新选号。恢复和追加不再具有创建文件的权限，收到`0x42`仅报错并保留原标识，防止已有记录被同名重建覆盖。开始时未插盘、尚未选定编号的检测，插盘后仍可首次分配。
+ 
+ ## 1. 文件格式
+ 
+@@ -28,12 +30,13 @@
+ storage_close_session()      /* 0x36 关闭并更新目录项 */
+ ```
+ 
+-文件同时处于打开状态只有几十毫秒，拔盘/断电最多丢当前这一分钟。每个文件操作函数都**不做** `0x30`/`0x31` 介质同步——那只能在"无文件打开"时做。
++本测试版包含大量诊断及关闭后的重挂载回读，事务持续时间以日志为准，不能保证仅几十毫秒或断电只丢一分钟。追加打开不执行`0x30`/`0x31`；新检测、故障恢复及文件关闭后的回读可重新挂载，均须在无文件打开时执行。
+ 
+ ## 3. 断盘容错
+ 
+ - 无 U 盘也能继续计量：`app/S1` 每 5 秒重试一次（`STORAGE_RETRY_MS = 5000`）。
+ - 恢复时按情况选择：本次已分配过文件名 → `storage_ensure_session()` 恢复它；还没有文件名 → `storage_create_session()` 新分配一个。
++- 创建开始前就返回并保留编号。`storage_create_session()`的`stem`为输入输出字符串，新检测须初始化为空；传已有标识只恢复，不创建。缺失、表头不完整或回读失败不自动修复覆盖；继续计量并打印错误，需保留日志后由用户复位开始新检测。
+ - 恢复后从当前分钟继续记录；**此前未写入的分钟不缓存、不补写**。
+ - 测量中 U 盘不可用时**屏上不再有任何提示**：原先"每 5 秒插播 1 秒 `U盘异常`"的做法已随状态栏文本链路一并删除（固件里已没有这个插播接口），只剩串口告警与每 5 秒一次的重试。
+ 
+@@ -41,19 +44,19 @@
+ 
+ - 文件名必须是**大写 8.3**：`SET_FILE_NAME(0x2F)` 按手册只支持 8.3 短文件名且字母必须大写。传小写时芯片能用同样字符串打开（日志看着"成功"），但写进目录项的名字是坏的 → 电脑上打不开/找不到。当前文件名由 `U%07lu` 生成（`make_fname()` 负责转大写 8.3），不涉及用户名。
+ - **`0x30` 之后必须补 `0x31`**：`CMD_DISK_CONNECT(0x30)` 会重新枚举 USB 设备、作废已挂载的 FAT 上下文，不重新 `DISK_MOUNT(0x31)` 的话，后续文件操作一律返回 `0x42 ERR_MISS_FILE`（哪怕文件就在盘上）。`media_sync()` 里这两个命令永远成对出现，且只在"无文件打开"时调用（`storage_create_session()` / `storage_ensure_session()` 开头）。
+-- **落盘验证**：新建文件后先重新挂载（强制芯片丢掉内部 FAT/目录缓存、重读磁盘）再打开，能打开且长度 ≥ 表头长度，才认为文件真的写进了 U 盘（否则拔盘/断电就没了）。
++- **设备端回读验证**：新建文件关闭后重新挂载并校验准确长度、表头字节；每分钟关闭后回读新增段。电脑可读及FAT一致性仍需独立实机验收，不能仅凭芯片回读判定闭环成功。
+ - 开机的 `TEST.TXT` 自检**已删除**（它每次上电重建文件，导致"电脑上删掉的文件又出现"）。
+-- 挂载失败（`0x31` 返回失败）不当致命错误，仅告警继续。
++- 挂载失败（`0x31`返回失败）禁止该次创建和写入，主业务继续计量并重试存储。
+ 
+ ## 5. 接口（`storage.h`）
+ 
+ | 接口 | 说明 |
+ |---|---|
+ | `storage_init()` | CH376 软 SPI + 进 USB 主机模式 + 检测磁盘 + 挂载；失败返回非 `ERR_OK`（`main.c` 告警后继续运行） |
+-| `storage_create_session(stem, size)` | 分配新的 `/U0000001.TXT`…，写表头并做落盘验证；`stem` 至少 9 字节 |
+-| `storage_ensure_session(stem)` | 断盘后恢复本次会话文件；已存在则保留原内容，不存在则新建 + 表头 |
++| `storage_create_session(stem, size)` | 空标识首次选号，创建命令前返回标识；失败仍保留；非空标识只恢复；至少9字节且初始化为空 |
++| `storage_ensure_session(stem)` | 只打开并回读表头验证，不存在或校验失败报错，不创建、不写表头 |
+ | `storage_open_session(stem)` | 打开本次文件并定位末尾，供当分钟追加 |
+ | `storage_write_open(text)` | 往"当前打开的文件"续写文本（文件保持打开，可多次调用） |
+-| `storage_close_session()` | 关闭当前文件并清状态（暂停/复位时调用） |
++| `storage_close_session()` | 每次追加后关闭、清状态，并回读新增段 |
+ 
+ > 注意：`stem` 是**不带扩展名的 8 字符编号**（如 `U0000001`），函数内部按下发 `/<stem>.TXT`。
+--- before/main/service/storage/storage.c
++++ current/main/service/storage/storage.c
+@@ -208,10 +208,18 @@
+     return ERR_OK;
+ }
+ 
++static err_t storage_ensure_session_impl(const char *user);
++
+ static err_t storage_create_session_impl(char *stem, size_t stem_size)
+ {
+     ESP_LOGI(TAG, "[建文件排查] 新建测量入口 下一编号=%lu", (unsigned long)s_next_session);
+     if (!stem || stem_size < 9) return ERR_PARAM;
++    /* 已锁定标识说明这次检测已尝试创建；后续只能验证和恢复同一文件。
++     * 即使上次创建命令或关闭回读失败，也不能重新选号或再次创建覆盖。 */
++    if (*stem) {
++        ESP_LOGW(TAG, "[会话保护] 已有文件标识=%s，转为恢复，禁止重复新建", stem);
++        return storage_ensure_session_impl(stem);
++    }
+     if (media_sync() != ERR_OK) {
+         ESP_LOGE(TAG, "[建文件排查] 失败阶段=介质同步");
+         return ERR_NOT_READY;
+@@ -237,6 +245,11 @@
+             return ERR_FAIL;
+         }
+ 
++        /* 先把编号交给会话，再发送具有覆盖语义的创建命令。
++         * 任何后续失败都必须保留这个标识，复位后的下一次检测使用下一编号。 */
++        snprintf(stem, stem_size, "%s", candidate);
++        s_next_session = id + 1;
++        ESP_LOGI(TAG, "[会话保护] 锁定文件=%s；本次检测仅在此发送一次创建命令，失败也不换号", s_fname);
+         if (create_with_header() != ERR_OK) {
+             uint8_t cleanup = CH376T_FILE_CLOSE();
+             ESP_LOGE(TAG, "[建文件排查] 失败阶段=创建或表头；清理关闭返回=%u 文件=%s", cleanup, s_fname);
+@@ -252,15 +265,13 @@
+             ESP_LOGE(TAG,"[建文件排查] 失败阶段=重挂载后的表头长度/内容校验 文件=%s",s_fname);
+             return ERR_FAIL;
+         }
+-        snprintf(stem, stem_size, "%s", candidate);
+-        s_next_session = id + 1;
+         ESP_LOGI(TAG, "新测量文件: %s", s_fname);
+         return ERR_OK;
+     }
+     return ERR_NO_MEM;
+ }
+ 
+-/* 断盘恢复：保证本次测量文件存在，不保持打开。 */
++/* 断盘恢复：只验证本次测量文件，不创建、不重写表头、不保持打开。 */
+ static err_t storage_ensure_session_impl(const char *user)
+ {
+     ESP_LOGI(TAG, "[恢复排查] 入口 文件标识=%s", user ? user : "空指针");
+@@ -281,7 +292,7 @@
+         }
+         ESP_LOGI(TAG, "测量文件已存在(保留原内容, 当前 %lu 字节): %s",
+                  (unsigned long)sz, s_fname);
+-        if (sz<strlen(STORAGE_HEADER) || !CH376_DiagVerifyFile(s_fname,sz,0,STORAGE_HEADER,strlen(STORAGE_HEADER))) {
++        if (sz == UINT32_MAX || sz<strlen(STORAGE_HEADER) || !CH376_DiagVerifyFile(s_fname,sz,0,STORAGE_HEADER,strlen(STORAGE_HEADER))) {
+             ESP_LOGE(TAG,"[恢复验收] 已有文件表头回读失败，不能仅凭打开成功恢复写入");
+             return ERR_FAIL;
+         }
+@@ -289,20 +300,8 @@
+     }
+     if (open_status != 0x42) return ERR_NOT_READY;
+ 
+-    /* 不存在 → 新建 + 写表头 + 关闭 */
+-    if (create_with_header() != ERR_OK) {
+-        CH376T_FILE_CLOSE();
+-        return ERR_FAIL;
+-    }
+-    if (!CH376T_FILE_CLOSE()) {
+-        ESP_LOGE(TAG, "关闭文件失败 → 目录项可能没落盘: %s", s_fname);
+-        return ERR_FAIL;
+-    }
+-    ESP_LOGI(TAG, "已创建测量文件并写入表头: %s", s_fname);
+-
+-    if (!CH376_DiagVerifyFile(s_fname,strlen(STORAGE_HEADER),0,STORAGE_HEADER,strlen(STORAGE_HEADER))) return ERR_FAIL;
+-    ESP_LOGI(TAG,"[恢复验收] 新文件表头长度与内容回读通过，电脑目录仍需验证: %s",s_fname);
+-    return ERR_OK;
++    ESP_LOGE(TAG, "[会话保护] 恢复文件=%s 返回0x42：保留原标识，禁止新建或重写表头，等待下次恢复", s_fname);
++    return ERR_NOT_READY;
+ }
+ 
+ /* 每分钟打开、追加、关闭。本函数不做 0x30/0x31 介质同步；
+@@ -323,18 +322,9 @@
+     ESP_LOGI(TAG, "[追加排查] 文件=%s 打开原始码=0x%02X", s_fname, open_status);
+     if (open_status != USB_INT_SUCCESS) {
+         if (open_status != 0x42) return ERR_NOT_READY;
+-        /* 文件确实不存在：现场建一个并写表头。 */
+-        ESP_LOGW(TAG, "文件不存在，现场创建: %s", s_fname);
+-        if (create_with_header() != ERR_OK) {
+-            CH376T_FILE_CLOSE();
+-            s_file_open = false;
+-            return ERR_FAIL;
+-        }
+-        /* 刚建的为空文件，指针已在末尾，直接保持打开即可 */
+-        s_file_open = true;
+-        s_append_offset=strlen(STORAGE_HEADER);
+-        ESP_LOGI(TAG, "打开用户文件(新建, 追加模式): %s", s_fname);
+-        return ERR_OK;
++        ESP_LOGE(TAG, "[会话保护] 追加文件=%s 返回0x42：禁止现场创建，保留历史记录并转入恢复", s_fname);
++        s_file_open = false;
++        return ERR_NOT_READY;
+     }
+ 
+     /* 已有内容 → 把写指针移到文件末尾，后续写入即为追加 */
+@@ -342,7 +332,10 @@
+     ESP_LOGI(TAG, "[追加排查] 文件=%s 芯片长度=%lu 表头=%u 追加位置=%lu", s_fname,
+              (unsigned long)len, (unsigned)strlen(STORAGE_HEADER), (unsigned long)len);
+     if (len < strlen(STORAGE_HEADER) || len == UINT32_MAX) {
+-        ESP_LOGW(TAG, "[追加排查] 长度可疑，保留原定位与返回规则，请核对本条日志");
++        ESP_LOGE(TAG, "[会话保护] 文件长度无效=%lu，禁止追加或重写表头: %s", (unsigned long)len, s_fname);
++        CH376T_FILE_CLOSE();
++        s_file_open = false;
++        return ERR_FAIL;
+     }
+     if (len > 0 && !CH376T_BYTE_LOCATE(len)) {
+         ESP_LOGE(TAG, "定位文件末尾失败(长度=%lu): %s",
+--- before/main/service/storage/storage.h
++++ current/main/service/storage/storage.h
+@@ -57,19 +57,21 @@
+ err_t storage_init(void);
+ 
+ /* 在 U 盘上分配新的 /U0000001.TXT ... /U9999999.TXT。
+- * stem 接收不带扩展名的 8 字符编号，缓冲区至少 9 字节。 */
++ * stem 必须是已初始化的字符串，缓冲区至少 9 字节；新检测传空串。
++ * 编号在首次创建命令之前返回，后续失败也保留它，调用方不得清空并重新选号。
++ * 传入非空标识时只恢复同一文件，不再创建。 */
+ err_t storage_create_session(char *stem, size_t stem_size);
+ 
+-/* 断盘后恢复本次会话文件；不存在则建文件及表头。 */
++/* 断盘后只验证本次会话文件；缺失或表头无效返回错误，禁止重建覆盖。 */
+ err_t storage_ensure_session(const char *stem);
+ 
+-/* 打开本次会话文件并定位末尾，供当分钟追加。 */
++/* 打开本次会话文件并定位末尾，供当分钟追加；缺失或长度无效禁止写入。 */
+ err_t storage_open_session(const char *stem);
+ 
+ /* 往"当前打开的文件"续写文本(文件保持打开，可多次调用) */
+ err_t storage_write_open(const char *text);
+ 
+-/* 关闭当前打开的文件并清状态(暂停/复位时调用) */
++/* 每次追加后关闭当前打开的文件并清状态，执行追加段回读验收。 */
+ err_t storage_close_session(void);
+ 
+ #ifdef __cplusplus
+--- before/tests/address-diagnostics/storage_fixture.c
++++ current/tests/address-diagnostics/storage_fixture.c
+@@ -43,4 +43,4 @@
+ int test_mount_failure_stops_initialization(void){mount_ok=false;CHECK(storage_init()==ERR_FAIL);CHECK(write_calls==0);return 0;}
+ int test_no_write_no_readback(void){CHECK(storage_init()==ERR_OK);CHECK(storage_open_session("U1")==ERR_OK);CHECK(storage_close_session()==ERR_OK);CHECK(verify_calls==0);return 0;}
+ int test_multiple_appends_last_range(void){CHECK(storage_init()==ERR_OK);CHECK(storage_open_session("U1")==ERR_OK);CHECK(storage_write_open("one")==ERR_OK);CHECK(storage_write_open("two")==ERR_OK);CHECK(storage_close_session()==ERR_OK);CHECK(expected_size==strlen(STORAGE_HEADER)+6&&expected_offset==strlen(STORAGE_HEADER)+3);return 0;}
+-int test_new_header_requires_readback(void){char stem[9];CHECK(storage_init()==ERR_OK);open_code=0x42;CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);CHECK(verify_calls==1&&expected_offset==0&&expected_length==strlen(STORAGE_HEADER));return 0;}
++int test_new_header_requires_readback(void){char stem[9]={0};CHECK(storage_init()==ERR_OK);open_code=0x42;CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);CHECK(verify_calls==1&&expected_offset==0&&expected_length==strlen(STORAGE_HEADER));return 0;}
+--- before/tests/session-files/run_tests.py
++++ current/tests/session-files/run_tests.py
+@@ -0,0 +1,48 @@
++"""真实 monitor/S1/storage 联合回归：只有 CH376 与 SDK 使用桩，不访问设备。"""
++from pathlib import Path
++import argparse
++import json
++import re
++import subprocess
++import sys
++
++here = Path(__file__).resolve().parent
++project = here.parents[1]
++guard = project / 'tests/storage-write-guard'
++parser = argparse.ArgumentParser()
++parser.add_argument('--label', default='current')
++args = parser.parse_args()
++out = here / '.build'
++out.mkdir(exist_ok=True)
++runtime = {}
++exec((guard / 'rv32_host.py').read_text().replace('5_000_000', '50_000_000'), runtime)
++gcc, RV32 = runtime['GCC'], runtime['RV32']
++libgcc = subprocess.check_output([str(gcc), '-march=rv32i_zicsr_zifencei', '-mabi=ilp32', '-print-libgcc-file-name'], text=True).strip()
++
++# 复用现有 SDK/采集桩，但删除存储桩，接入真实存储实现。
++source = (guard / 'monitor_test.c').read_text(encoding='utf8')
++for name in ['storage_create_session', 'storage_ensure_session', 'storage_open_session',
++             'storage_write_open', 'storage_close_session', 'storage_get_status', 'snprintf']:
++    source, count = re.subn(r'^.*\b' + name + r'\([^\n]*\)\{[^\n]*\}\s*$', '', source, flags=re.M)
++    if count != 1:
++        raise RuntimeError(f'预期替换一处桩 {name}，实际 {count}')
++source += '\n#include "' + (here / 'session_model.c').as_posix() + '"\n'
++generated = out / 'integration.c'
++generated.write_text(source, encoding='utf8')
++elf = out / 'integration.elf'
++command = [str(gcc), '-march=rv32im', '-mabi=ilp32', '-std=c11', '-Os', '-ffreestanding',
++           '-fno-builtin', '-fno-stack-protector', '-msmall-data-limit=0', '-nostdlib',
++           '-Wall', '-Wextra', '-Werror', '-Wno-unused-variable', '-Wno-unused-function',
++           '-Wl,-Ttext=0x10000', '-Wl,-e,0x10000', '-Wl,--no-relax',
++           '-I', str(guard / 'monitor-stubs'), '-I', str(project / 'main'),
++           str(generated), libgcc, '-o', str(elf)]
++subprocess.run(command, check=True)
++engine = RV32(elf)
++names = re.findall(r'^int (test_session_\w+)\(void\)', (here / 'session_model.c').read_text(encoding='utf8'), re.M)
++results = []
++for name in names:
++    line = engine.call(name)
++    results.append({'test': name, 'passed': line == 0, 'failure_line': line})
++    print(('PASS ' if line == 0 else 'FAIL ') + name + (f' line {line}' if line else ''), flush=True)
++(out / (args.label + '-results.json')).write_text(json.dumps(results, indent=2), encoding='utf8')
++sys.exit(0 if all(r['passed'] for r in results) else 1)
+--- before/tests/session-files/session_model.c
++++ current/tests/session-files/session_model.c
+@@ -0,0 +1,145 @@
++/* 文件系统只存在内存中；联合执行真实状态机、计时与存储服务。 */
++#include "driver/ch376/ch376_spi.h"
++#include "driver/ch376/ch376_diag.h"
++typedef struct { char name[40]; char data[512]; uint32_t size; } model_file_t;
++static model_file_t files[8];
++static unsigned file_count, create_count, byte_write_count, verify_failures, missing_opens;
++static int current_file = -1;
++static uint32_t cursor;
++static bool disk_present = true, model_close_ok = true, header_write_ok = true;
++static bool create_reply_ok = true;
++static uint8_t forced_open_code;
++
++/* 测试只需要文件名、字符串复制；不替代真实库的尿量数值格式化验收。 */
++int snprintf(char *out,size_t n,const char *fmt,...)
++{
++    char tmp[160];size_t used=0;va_list ap;va_start(ap,fmt);
++    if(!strcmp(fmt,"U%07lu")){
++        unsigned long id=va_arg(ap,unsigned long);tmp[used++]='U';
++        unsigned long div=1000000;while(div){tmp[used++]=(char)('0'+id/div%10);div/=10;}
++    }else if(!strcmp(fmt,"%s")||!strcmp(fmt,"/%s.TXT")){
++        const char*s=va_arg(ap,const char*);if(fmt[0]=='/')tmp[used++]='/';
++        while(*s&&used<sizeof(tmp)-5)tmp[used++]=*s++;
++        if(fmt[0]=='/'){tmp[used++]='.';tmp[used++]='T';tmp[used++]='X';tmp[used++]='T';}
++    }
++    va_end(ap);if(n){size_t k=used<n-1?used:n-1;memcpy(out,tmp,k);out[k]=0;}return (int)used;
++}
++static int find_file(const char*name){for(unsigned i=0;i<file_count;i++)if(!strcmp(files[i].name,name))return (int)i;return -1;}
++static int add_file(const char*name,const char*data){int i=(int)file_count++;snprintf(files[i].name,sizeof(files[i].name),"%s",name);files[i].size=strlen(data);memcpy(files[i].data,data,files[i].size+1);return i;}
++static bool same_bytes(const char*a,const char*b,size_t n){while(n--)if(*a++!=*b++)return false;return true;}
++void CH376_PORT_INIT(void){}
++uint8_t CH376T_Get_IC_Ver(void){return 0x42;}
++bool CH376T_SetUsbMode(void){return true;}
++bool CH376T_CMD_DISK_CONNECT(void){return disk_present;}
++bool CH376T_DISK_MOUNT(void){current_file=-1;return disk_present;}
++uint8_t CH376T_DiskCheckRaw(void){return disk_present?0x14:0x16;}
++uint8_t CH376T_FILE_OPEN_STATUS(const char*name){
++    if(forced_open_code){uint8_t code=forced_open_code;forced_open_code=0;current_file=-1;return code;}
++    if(missing_opens){missing_opens--;current_file=-1;return 0x42;}
++    current_file=find_file(name);cursor=0;return current_file>=0?0x14:0x42;
++}
++bool CH376T_FILE_OPEN_NAME(const char*name){return CH376T_FILE_OPEN_STATUS(name)==0x14;}
++bool CH376T_FILE_CREATE_NAME(const char*name){
++    create_count++;current_file=find_file(name);if(current_file<0)current_file=add_file(name,"");
++    files[current_file].size=0;files[current_file].data[0]=0;cursor=0;return create_reply_ok;
++}
++bool CH376T_BYTE_WRITE_DATA(const uint8_t*data,uint16_t length){
++    byte_write_count++;if(current_file<0||!header_write_ok||cursor+length>=sizeof(files[0].data))return false;
++    model_file_t*f=&files[current_file];memcpy(f->data+cursor,data,length);cursor+=length;
++    if(cursor>f->size)f->size=cursor;
++    f->data[f->size]=0;return true;
++}
++bool CH376T_FILE_CLOSE(void){current_file=-1;return model_close_ok;}
++uint32_t CH376T_GetFileSize(void){return current_file<0?UINT32_MAX:files[current_file].size;}
++bool CH376T_BYTE_LOCATE(uint32_t offset){if(current_file<0||offset>files[current_file].size)return false;cursor=offset;return true;}
++void CH376_DiagReset(void){}
++bool CH376_DiagPrepare(bool force){(void)force;return disk_present;}
++bool CH376_DiagEnsureReady(void){return disk_present;}
++bool CH376_DiagVerifyFile(const char*name,uint32_t size,uint32_t offset,const char*text,uint16_t length){
++    if(verify_failures){verify_failures--;return false;}int i=find_file(name);
++    return i>=0&&files[i].size==size&&offset+length<=size&&same_bytes(files[i].data+offset,text,length);
++}
++#define TAG STORAGE_TAG
++#include "service/storage/storage.c"
++#undef TAG
++
++int test_session_normal_resume_duplicate_start_and_reset(void){
++    CHECK(app_monitor_start()==ERR_OK);key_cb(INPUT_KEY1);CHECK(create_count==1);
++    CHECK(!strcmp(S1_session_file(),"U0000001"));
++    CHECK(submit(APP_COMMAND_START,1,5000)==ERR_OK);monitor_step();CHECK(create_count==1);
++    for(unsigned i=0;i<3;i++){key_cb(INPUT_KEY1);now_ms+=10000;monitor_step();key_cb(INPUT_KEY1);monitor_step();CHECK(create_count==1&&app_monitor_state()==APP_MEASURING);}
++    key_cb(INPUT_KEY2);key_cb(INPUT_KEY1);CHECK(create_count==2&&file_count==2);
++    CHECK(!strcmp(S1_session_file(),"U0000002"));return 0;
++}
++int test_session_header_verification_failure_keeps_reserved_name(void){
++    CHECK(app_monitor_start()==ERR_OK);verify_failures=1;key_cb(INPUT_KEY1);
++    CHECK(!s_storage_ok&&create_count==1&&file_count==1);
++    CHECK(!strcmp(S1_session_file(),"U0000001"));
++    key_cb(INPUT_KEY1);now_ms=10000;monitor_step();CHECK(create_count==1);
++    key_cb(INPUT_KEY1);monitor_step();CHECK(s_storage_ok&&create_count==1&&file_count==1);
++    CHECK(!strcmp(S1_session_file(),"U0000001"));return 0;
++}
++int test_session_running_retry_does_not_allocate_second_name(void){
++    CHECK(app_monitor_start()==ERR_OK);verify_failures=1;key_cb(INPUT_KEY1);
++    now_ms=6000;monitor_step();CHECK(s_storage_ok&&create_count==1&&file_count==1);return 0;
++}
++int test_session_create_reply_failure_does_not_resend_create(void){
++    CHECK(app_monitor_start()==ERR_OK);create_reply_ok=false;key_cb(INPUT_KEY1);
++    CHECK(create_count==1&&!strcmp(S1_session_file(),"U0000001"));
++    create_reply_ok=true;for(unsigned i=1;i<=3;i++){now_ms=i*6000;monitor_step();}
++    CHECK(!s_storage_ok&&create_count==1&&file_count==1);return 0;
++}
++int test_session_partial_header_is_not_rewritten(void){
++    CHECK(app_monitor_start()==ERR_OK);header_write_ok=false;key_cb(INPUT_KEY1);
++    CHECK(create_count==1&&!strcmp(S1_session_file(),"U0000001"));
++    header_write_ok=true;now_ms=6000;monitor_step();
++    CHECK(!s_storage_ok&&create_count==1&&byte_write_count==1&&files[0].size==0);return 0;
++}
++int test_session_close_reply_failure_can_recover_same_file(void){
++    CHECK(app_monitor_start()==ERR_OK);model_close_ok=false;key_cb(INPUT_KEY1);
++    CHECK(!s_storage_ok&&!strcmp(S1_session_file(),"U0000001"));
++    model_close_ok=true;now_ms=6000;monitor_step();CHECK(s_storage_ok&&create_count==1&&file_count==1);return 0;
++}
++int test_session_append_missing_does_not_overwrite_previous_rows(void){
++    char stem[9]={0};CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);
++    CHECK(storage_open_session(stem)==ERR_OK);CHECK(storage_write_open("minute one\r\n")==ERR_OK);CHECK(storage_close_session()==ERR_OK);
++    uint32_t old_size=files[0].size;unsigned old_writes=byte_write_count;missing_opens=1;
++    CHECK(storage_open_session(stem)!=ERR_OK);CHECK(storage_write_open("bad")==ERR_NOT_READY);
++    CHECK(create_count==1&&files[0].size==old_size&&byte_write_count==old_writes);
++    CHECK(storage_ensure_session(stem)==ERR_OK);CHECK(storage_open_session(stem)==ERR_OK);
++    CHECK(storage_write_open("minute two\r\n")==ERR_OK);CHECK(storage_close_session()==ERR_OK);
++    CHECK(create_count==1&&same_bytes(files[0].data+strlen(STORAGE_HEADER),"minute one\r\nminute two\r\n",24));return 0;
++}
++int test_session_recovery_missing_does_not_create(void){
++    char stem[9]={0};CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);uint32_t size=files[0].size;
++    missing_opens=1;CHECK(storage_ensure_session(stem)!=ERR_OK);
++    CHECK(create_count==1&&files[0].size==size);CHECK(storage_ensure_session(stem)==ERR_OK);return 0;
++}
++int test_session_new_disk_missing_known_file_does_not_create(void){
++    char stem[9]={0};CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);
++    file_count=0;CHECK(storage_ensure_session(stem)!=ERR_OK);CHECK(create_count==1&&file_count==0);return 0;
++}
++int test_session_no_disk_then_insert_creates_only_once(void){
++    CHECK(app_monitor_start()==ERR_OK);disk_present=false;key_cb(INPUT_KEY1);
++    CHECK(!s_storage_ok&&create_count==0&&S1_session_file()[0]==0);
++    disk_present=true;now_ms=6000;monitor_step();CHECK(s_storage_ok&&create_count==1&&file_count==1);return 0;
++}
++int test_session_existing_records_are_skipped_and_preserved(void){
++    add_file("/U0000001.TXT","historical data");CHECK(app_monitor_start()==ERR_OK);key_cb(INPUT_KEY1);
++    CHECK(!strcmp(S1_session_file(),"U0000002")&&create_count==1&&!strcmp(files[0].data,"historical data"));
++    key_cb(INPUT_KEY2);key_cb(INPUT_KEY1);CHECK(!strcmp(S1_session_file(),"U0000003")&&create_count==2);return 0;
++}
++int test_session_repeated_create_api_uses_existing_name(void){
++    char stem[9]={0};CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);
++    CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);
++    CHECK(!strcmp(stem,"U0000001")&&create_count==1&&file_count==1);return 0;
++}
++int test_session_suspicious_short_length_blocks_append(void){
++    char stem[9]={0};CHECK(storage_create_session(stem,sizeof(stem))==ERR_OK);files[0].size=0;
++    unsigned old_writes=byte_write_count;CHECK(storage_open_session(stem)!=ERR_OK);
++    CHECK(storage_write_open("bad")==ERR_NOT_READY&&byte_write_count==old_writes&&create_count==1);return 0;
++}
++int test_session_failed_lookup_does_not_reserve_or_create(void){
++    char stem[9]={0};CHECK(storage_init()==ERR_OK);forced_open_code=0x1F;
++    CHECK(storage_create_session(stem,sizeof(stem))!=ERR_OK);CHECK(!stem[0]&&create_count==0);return 0;
++}
+--- before/日志测试说明.md
++++ current/日志测试说明.md
+@@ -1,8 +1,16 @@
+-# 写盘兼容验证版 20261014-B
++# 会话文件修复版 20261015-C
+ 
+-工程：`F:\ESP32\niaio\git\third_logtest_20261012`。正式`git\third`未改动。之前的A版完整源文件及镜像备份在本目录`before`（107文件，清单before-manifest.json）。本轮不烧录、不监听、不修复或格式化U盘。
++工程：`F:\ESP32\niaio\git\third_logtest_20261012`。正式`git\third`未改动。修改前B版源码、测试与镜像110文件备份在`F:\ESP32\niaio\outputs\third-session-fix-20261015\before`，附before-manifest.json。本轮不烧录、不监听、不修复或格式化U盘。
+ 
+-启动必须出现：`[写盘兼容验证版] 20261014-B`。这版**包含旧芯片兼容处理及保护判定**，不是只有打印的A版；尚未实机证实修复成功。
++启动必须出现：`[会话文件修复版] 20261015-C`。这是包含代码修复的测试固件，保留B版旧芯片兼容处理、错误地址拦截和内容回读。重复建文件的代码路径已做回归；已有文件偶发返回0x42及首簇读回不一致仍需实机排查，不能称为全部存储问题已经修复。
++
++## 本次修复
++
++- 首次发送创建命令前锁定会话编号。创建回复、写表头、关闭或回读失败均保留原编号，5秒重试只恢复同一文件。
++- 恢复及追加收到0x42不再创建文件、不重写表头，明确打印`[会话保护]`；文件长度小于表头或为无效值时禁止追加。
++- 正常暂停继续不分配新文件；检测复位后再开始才分配下一编号。尚未分配编号时的无盘检测，后续插盘可首次分配。
++- 文件真正缺失、表头残缺时保持计量及错误提示，不做覆盖修复；请保留日志后复位开启新检测。此前丢失的分钟记录不缓存、不补写。
++- `[会话控制]`记录新检测、暂停继续及复位；`[会话重试]`记录首次分配或恢复原因；`[会话保护]`记录锁定文件及禁止重建原因。
+ 
+ ## 日志与行为
+ 
+@@ -21,15 +29,16 @@
+ 
+ ## 下一次怎么测试
+ 
+-1. 从该工程的firmware烧录B版，下载口仍需按实际ESP32-S3端口指定，不能自动把COM21日志口当下载口。
++1. 从该工程的firmware烧录C版，下载口仍需按实际ESP32-S3端口指定，不能自动把COM21日志口当下载口。
+ 2. 先只上电，保存完整UTF-8、115200/8N1/无流控启动日志，查看`兼容结论`是否通过、数据基址差是否0。若出现任何`禁止写盘`/`拦截`，不要继续开始检测，把日志发来。
+-3. 启动通过后再做一次一分钟检测，保存建文件、表头验收及分钟回读全段。若第1分钟新增47字节、表头56字节，则总长应103；以实际日志请求长度为准。
+-4. 检测复位并等待文件关闭/验收输出完成，再接电脑，核对正常目录能看到本次TXT并打开内容。安全弹出、重新插入后再确认文件仍在。`CH376回读通过`与`电脑验收通过`分开记录。
++3. 启动通过后开始一次检测，中间至少暂停继续两次，累计有效测量满3分钟。保存全部日志。正常应只有一次创建，继续日志始终沿用同一编号，每分钟均为打开追加，不能出现现场创建。若每分钟新增47字节、表头56字节，则3分钟总长197字节；以实际日志请求长度为准。
++4. 若出现0x42，应看到禁止重建及同一编号的恢复重试；这证明防覆盖生效，但仍是本次存储异常，不算完整验收通过。保存现场日志，不要靠反复复位掩盖。
++5. 正常三分钟完成后检测复位、再次开始，验证另分配一个编号。等待表头验收完成后再检测复位，再接电脑。旧文件应保留全部三行，新文件单独存在；暂停不计时，分钟时间连续。安全弹出重插后确认，分别核对芯片回读、电脑文件及文件系统状态。
+ 
+-当前盘之前已发生FAT损坏。若B版地址已正确但电脑仍报告文件系统错误，应保留本轮证据后再做文件系统修复；本轮未擅自再修盘或格式化。
++当前盘之前已发生FAT损坏。若地址已正确但电脑仍报告文件系统错误，应保留本轮证据后再处理；本轮未擅自再修盘或格式化。
+ 
+ ## 验证
+ 
+-ESP32-S3 SDK构建、诊断/兼容/回读模型、真实存储服务模型、原控制回归、字节写与等待模型结果保存在verification.json。存储服务模型对A版有6项失败，对B版8项全部通过，确认测试可以识别原来缺少回读/地址门控的行为。模型不包含真实CH376或闪存，不能宣称实物已经修复。
++本轮验证报告在`F:\ESP32\niaio\outputs\third-session-fix-20261015`。新增联合回归接入真实monitor/S1/storage，只有SDK和CH376使用内存模型；红灯结果保留在tests/session-files/.build/red-results.json，绿灯在green-results.json。另运行原控制、地址兼容/回读、存储服务及字节写等待回归，并进行ESP32-S3构建。模型不包含真实CH376或闪存，不能宣称实物已经修复。
+ 
+ 源码参考：[沁恒EVT文件系统层镜像](https://github.com/changleo828/BOSSEN_USB_FOR_WT/blob/master/Documents/EVT/EXAM/FILE_SYS.C)，CH376SetFileName和CH376FileOpen旧版本分支。实现另增加BPB一致性约束、重复补偿保护及地址拦截，没有直接套用未知偏移。

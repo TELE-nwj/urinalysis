@@ -1,0 +1,20 @@
+[
+  {
+    "Path": "bootloader/bootloader.bin",
+    "Offset": "0x0",
+    "Bytes": 20832,
+    "SHA256": "8B4FEDC22678F84EF50F347DDCEC30B466875670AC8D78B5411B01AC428001BD"
+  },
+  {
+    "Path": "third.bin",
+    "Offset": "0x10000",
+    "Bytes": 845696,
+    "SHA256": "136845574616991B93599046CBE1B85FF0A13B65E856EA520ABA9262D91B75E1"
+  },
+  {
+    "Path": "partition_table/partition-table.bin",
+    "Offset": "0x8000",
+    "Bytes": 3072,
+    "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820"
+  }
+]

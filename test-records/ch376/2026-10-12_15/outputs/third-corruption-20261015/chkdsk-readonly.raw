@@ -1,0 +1,24 @@
+The type of the file system is FAT32.
+Access is denied.
+
+Volume Serial Number is D079-BDB0
+Windows found errors on the disk, but will not fix them
+because disk checking was run without the /F (fix) parameter.
+The specified disk appears to be a non-Windows XP disk.
+Updating FAT media type.
+Windows is verifying files and folders...
+0 percent completed.                  5 percent completed..                 11 percent completed...                17 percent completed....               23 percent completed.....              The size of the \U0000003.TXT entry is not valid.
+29 percent completed......             35 percent completed.                  41 percent completed..                 47 percent completed...                52 percent completed....               58 percent completed.....              64 percent completed......             70 percent completed.                  100 percent completed..                 File and folder verification is complete.
+Convert lost chains to files (Y/N)? Convert lost chains to files (Y/N)? 16384 bytes in 4 recoverable files.
+
+Windows has checked the file system and found problems.
+Run CHKDSK with the /F (fix) option to correct these.
+
+4,018,110,464 bytes total disk space.
+        8,192 bytes in 2 hidden files.
+       40,960 bytes in 11 files.
+4,018,036,736 bytes available on disk.
+
+        4,096 bytes in each allocation unit.
+      980,984 total allocation units on disk.
+      980,966 allocation units available on disk.

@@ -1,0 +1,90 @@
+{
+  "partition_lba": 64,
+  "correct_data_lba": 16448,
+  "root_lba": 16448,
+  "fat_equal": false,
+  "fat_mismatch_sectors": 4,
+  "fat_mismatch_indices": [
+    6640,
+    6672,
+    6680,
+    6688
+  ],
+  "files": [
+    {
+      "file": "U0000001.TXT",
+      "root_offset": 320,
+      "cluster": 7,
+      "bytes": 56,
+      "absolute_lba": 16488,
+      "physical_matches_file": true,
+      "sha256": "3d7398dc2180fe02cdd5b3c0a4a9fe54ef407ad8a498dc585a102b16342c7abf",
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n"
+    },
+    {
+      "file": "U0000002.TXT",
+      "root_offset": 352,
+      "cluster": 264,
+      "bytes": 103,
+      "absolute_lba": 18544,
+      "physical_matches_file": true,
+      "sha256": "7065b503160808177d09a216a90f6f8a07497fbf7bdc855a8d560802f59ecd16",
+      "text": "时间(hh:mm:ss)    尿量(ml)    平均流速(ml/h)  \r\n00:01:00          9.5ml           570.0ml/h  \r\n"
+    }
+  ],
+  "pause_resume": {
+    "states": [
+      [
+        6523,
+        "待开始",
+        "测量中"
+      ],
+      [
+        26873,
+        "测量中",
+        "暂停"
+      ],
+      [
+        27403,
+        "暂停",
+        "测量中"
+      ],
+      [
+        28713,
+        "测量中",
+        "暂停"
+      ],
+      [
+        31123,
+        "暂停",
+        "测量中"
+      ],
+      [
+        76393,
+        "测量中",
+        "暂停"
+      ],
+      [
+        78283,
+        "暂停",
+        "待开始"
+      ]
+    ],
+    "resumed_pauses": [
+      {
+        "start_ms": 26873,
+        "end_ms": 27403,
+        "duration_ms": 530
+      },
+      {
+        "start_ms": 28713,
+        "end_ms": 31123,
+        "duration_ms": 2410
+      }
+    ],
+    "pause_ms": 2940,
+    "start_ms": 6523,
+    "minute1_ms": 69453,
+    "effective_to_minute1_ms": 59990
+  }
+}

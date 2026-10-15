@@ -1,0 +1,64 @@
+{
+  "version": "20261015-D",
+  "build_succeeded": true,
+  "image_marker_verified": true,
+  "test_suites": {
+    "会话联合回归": {
+      "passed": 14,
+      "evidence": "git\\third_logtest_20261012\\tests\\session-files\\.build\\d-green-results.json"
+    },
+    "控制与写盘保护": {
+      "passed": 15,
+      "evidence": "git\\third_logtest_20261012\\tests\\storage-write-guard\\.build\\results.json"
+    },
+    "地址兼容与回读": {
+      "passed": 45,
+      "evidence": "git\\third_logtest_20261012\\tests\\address-diagnostics\\.build\\results.json"
+    },
+    "存储服务": {
+      "passed": 8,
+      "evidence": "git\\third_logtest_20261012\\tests\\address-diagnostics\\.build\\storage-results.json"
+    },
+    "字节写与等待": {
+      "passed": 12,
+      "evidence": "git\\third_logtest_20261012\\tests\\log-sequence\\.build\\results.json"
+    }
+  },
+  "total_current_passed": 94,
+  "new_regression_red_total": 37,
+  "new_regression_red_failures": 9,
+  "formal_baseline_files_unchanged": 101,
+  "before_backup_verified": 112,
+  "images": [
+    {
+      "Path": "bootloader/bootloader.bin",
+      "Offset": "0x0",
+      "Bytes": 20832,
+      "SHA256": "8B4FEDC22678F84EF50F347DDCEC30B466875670AC8D78B5411B01AC428001BD"
+    },
+    {
+      "Path": "third.bin",
+      "Offset": "0x10000",
+      "Bytes": 848336,
+      "SHA256": "9EC4672D25A6C7DD8EF467EAFB88B3E0EBA40789BB8DDBF49C8BBCD2F09878AF"
+    },
+    {
+      "Path": "partition_table/partition-table.bin",
+      "Offset": "0x8000",
+      "Bytes": 3072,
+      "SHA256": "7F00B6C042A89B15B0CAC534F82ED988CAF29278FF5700B0C511EB1B5BB7C820"
+    }
+  ],
+  "changed_or_added_text_files": [
+    "main\\driver\\ch376\\ch376_diag.c",
+    "main\\driver\\ch376\\ch376_diag.h",
+    "main\\driver\\ch376\\ch376_spi.c",
+    "main\\main.c",
+    "main\\service\\storage\\README.md",
+    "tests\\address-diagnostics\\fixture.c",
+    "tests\\address-diagnostics\\run_tests.py",
+    "tests\\log-sequence\\run_tests.py",
+    "日志测试说明.md"
+  ],
+  "hardware_acceptance": "未执行；现盘FAT损坏，D预期拒写；1E数据页变量时序需实机验证"
+}

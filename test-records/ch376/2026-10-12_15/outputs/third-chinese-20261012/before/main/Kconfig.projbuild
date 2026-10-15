@@ -1,0 +1,10 @@
+menu "NIAIO mobile connection"
+    config NIAIO_AP_SSID
+        string "Device Wi-Fi SSID"
+        default "NIAIO-Monitor"
+    config NIAIO_AP_PASSWORD
+        string "Device Wi-Fi password (8..63 ASCII characters)"
+        default "niaio-v1-test"
+        help
+            Development credential. Change before production use.
+endmenu
