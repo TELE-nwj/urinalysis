@@ -1,0 +1,40 @@
+# ============ 构建产物（所有子工程通用）============
+build/
+# ESP-IDF 的构建目录可能叫 build / build_xxx
+build_*/
+cmake-build-*/
+
+# ============ Python ============
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# ============ ESP-IDF ============
+sdkconfig.old
+*.bin.tmp
+flasher_args.json.bak
+
+# ============ 打包产物 ============
+dist/
+*.pkg
+*.spec
+*.exe
+*.apk
+!手机与上位机/安卓App/android/*.apk
+
+# ============ 编辑器 / 系统 ============
+.vscode/.browse.*
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============ 临时文件 ============
+*.orig
+*.rej
+*.bak
+~$*
+.restructure/
+.tmp_rs/
