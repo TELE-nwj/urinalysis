@@ -1,0 +1,22 @@
+[
+  {
+    "test": "test_handshake_single_block_without_interleaved_probe",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_handshake_multiple_blocks_without_interleaved_probe",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_handshake_damaged_fat_stops_before_request",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_handshake_new_file_receives_complete_header",
+    "passed": true,
+    "failure_line": 0
+  }
+]

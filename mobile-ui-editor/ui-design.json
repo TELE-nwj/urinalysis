@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "title": "尿量监测仪",
+  "primary": "#1565C0",
+  "background": "#FFFFFF",
+  "text": "#142E46",
+  "numberSp": 52,
+  "gapDp": 16,
+  "pagePaddingDp": 20,
+  "cornerDp": 20,
+  "metricOrder": [
+    "volume",
+    "rate",
+    "drops",
+    "elapsed"
+  ],
+  "labels": {
+    "volume": "累计尿量",
+    "rate": "实时流速",
+    "drops": "累计滴数",
+    "elapsed": "有效测量时间",
+    "clock": "设备时钟",
+    "battery": "电量",
+    "storage": "U盘",
+    "state": "测量状态",
+    "alert": "报警",
+    "start": "开始测量",
+    "pause": "暂停测量",
+    "resume": "继续测量",
+    "reset": "复位测量",
+    "monitorTab": "实时监测",
+    "deviceTab": "设备连接"
+  }
+}

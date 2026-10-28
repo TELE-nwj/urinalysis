@@ -1,0 +1,45 @@
+{
+  "baseline_failures": 6,
+  "current": [
+    {
+      "case": "test_minute_close_requires_readback",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_readback_failure_reports_error",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_close_failure_skips_verification",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_compat_failure_stops_initialization",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_mount_failure_stops_initialization",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_no_write_no_readback",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_multiple_appends_last_range",
+      "passed": true,
+      "failure_line": 0
+    },
+    {
+      "case": "test_new_header_requires_readback",
+      "passed": true,
+      "failure_line": 0
+    }
+  ]
+}

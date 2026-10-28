@@ -205,6 +205,7 @@ cd /d f:\ESP32\niaio\git\second
 2. **中文/超长用户名**：文件名强制转大写 8.3，`张三` → `/__.TXT`，**不同中文名会撞名**；
    如需保原名要走 CH376 的长文件名(LFN)流程
 3. **无 RTC**：记录里的时间是**会话计时**（从 `start` 起算），不是绝对时间
-4. **`driver/key`（4 路按键）未接入业务**；`driver/battery` 仍是占位 stub
+4. **`driver/key`（2 路按键）未接入业务**；`driver/battery` 仍是占位 stub
+   （目标方案：**ADC 分压 @ GPIO7**，INA228 电量计方案已取消）
 5. **`screen.c` 里的 RX 原始字节 dump 是调试用**，正式版可注释掉
 6. CH376 驱动里旧的 `CH376T_FILE_CREATE()` / `CH376T_BYTE_WRITE()` / `CH376T_SET_FILE_NAME()`（写死 `/ASD.TXT`、`"hello world"`）已无人调用，可清理

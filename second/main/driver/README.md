@@ -9,7 +9,7 @@
 | 液滴检测 | `drop/` | 可用 | `service/urine`、`app/S3` | [`drop/README.md`](drop/README.md) |
 | 串口屏 UART | `screen_uart/` | 可用 | `service/screen` | [`screen_uart/README.md`](screen_uart/README.md) |
 | 按键 ×2 | `key/` | 可用，**未接入业务** | — | [`key/README.md`](key/README.md) |
-| 电池 | `battery/` | **占位 stub** | — | [`battery/README.md`](battery/README.md) |
+| 电池 | `battery/` | **占位 stub**（目标方案：ADC 分压 @ GPIO7，INA228 已取消） | — | [`battery/README.md`](battery/README.md) |
 | 时间服务 | `time_svc/` | 可用 | `main.c`、`app/monitor`、`app/S3` | 见下 |
 
 ---

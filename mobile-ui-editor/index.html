@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>尿量监测仪 · UI 编辑</title><link rel="stylesheet" href="/editor.css"></head>
+<body><header class="workspace-header"><div><span class="eyebrow">NIAIO / ANDROID</span><h1>界面编辑</h1></div><div class="save-actions"><button id="save" class="secondary">保存设计</button><button id="apply" class="primary">同步到 APP 源码</button></div></header>
+<p class="workspace-note">基于当前安卓界面。点击预览内容选中编辑，调整后即时预览。所有数值均为示例。</p>
+<div class="toolbar"><label class="interaction-mode"><input id="interactive" type="checkbox">交互预览</label><label>预览状态 <select id="sampleState"><option value="IDLE">待开始</option><option value="MEASURING">测量中</option><option value="PAUSED">已暂停</option><option value="OFFLINE">设备离线</option></select></label><button id="export" class="plain">导出设计</button><button id="resetDesign" class="plain">恢复默认设计</button></div>
+<p id="feedback" class="feedback" role="status">正在载入设计…</p>
+<main class="editor-layout"><section class="preview-area" aria-label="安卓界面预览"><div class="preview-caption"><span>安卓界面预览</span><span>360 dp · 示例数据</span></div><div id="phone" class="phone"><div class="system-bar"><span>15:53</span><span>Wi-Fi · 74%</span></div><div id="app" class="app"></div></div><p class="preview-note">预览用于设计调整，实际字体和触摸效果以安卓 APK 为准。</p></section>
+<aside class="inspector" aria-label="设计属性"><section><h2 id="selectionName">整体样式</h2><p class="hint">选中预览中的文字可在这里修改</p><label id="copyField">显示文案 <input id="copy" maxlength="48" type="text"></label></section>
+<section><h2>颜色</h2><div class="colors"><label>主色<input id="primary" type="color"></label><label>背景<input id="background" type="color"></label><label>数据文字<input id="text" type="color"></label></div></section>
+<section><h2>字号与间距</h2><label>大数值字号 <output id="numberSpValue"></output><input id="numberSp" type="range" min="32" max="72"></label><label>内容间距 <output id="gapDpValue"></output><input id="gapDp" type="range" min="8" max="32"></label><label>左右边距 <output id="pagePaddingDpValue"></output><input id="pagePaddingDp" type="range" min="12" max="32"></label><label>按钮圆角 <output id="cornerDpValue"></output><input id="cornerDp" type="range" min="0" max="32"></label></section>
+<section><h2>数据项顺序</h2><p class="hint">拖动排序，也可用上下按钮</p><ol id="metricOrder"></ol></section>
+<section class="sync-note"><h2>保存与同步</h2><p>“保存设计”保留本地设计。“同步到 APP 源码”更新安卓显示参数。重新构建 APK 后，手机上的界面才会更新。</p><p>连接、计时、协议和测量控制不由这个编辑器修改。</p></section></aside></main>
+<dialog id="confirmReset"><h2>复位测量</h2><p>将清空本次尿量、滴数和有效测量时间，并回到待开始。U盘历史文件不会删除。</p><div><button id="cancelReset" class="secondary">取消</button><button id="confirmResetAction" class="primary">确认复位（预览）</button></div></dialog>
+<script src="/editor.js"></script></body></html>

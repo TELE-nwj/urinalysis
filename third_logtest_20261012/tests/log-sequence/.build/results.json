@@ -1,0 +1,74 @@
+[
+  {
+    "case": "test_normal",
+    "baseline": 588938891,
+    "logtest": 588938891,
+    "passed": true
+  },
+  {
+    "case": "test_zero_progress",
+    "baseline": -664767814,
+    "logtest": -664767814,
+    "passed": true
+  },
+  {
+    "case": "test_oversize",
+    "baseline": 907949124,
+    "logtest": 907949124,
+    "passed": true
+  },
+  {
+    "case": "test_multiblock",
+    "baseline": -328861888,
+    "logtest": -328861888,
+    "passed": true
+  },
+  {
+    "case": "test_request_error",
+    "baseline": 147209669,
+    "logtest": 147209669,
+    "passed": true
+  },
+  {
+    "case": "test_wait_immediate",
+    "baseline": 0,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_wait_delayed",
+    "baseline": 0,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_wait_timeout",
+    "baseline": 0,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_guard_blocks_write",
+    "baseline": 1,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_no_diagnostic_call_during_data_handoff",
+    "baseline": 0,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_finish_guard_rejects_success",
+    "baseline": 1,
+    "logtest": 0,
+    "passed": true
+  },
+  {
+    "case": "test_fault_close_does_not_update_length",
+    "baseline": 1,
+    "logtest": 0,
+    "passed": true
+  }
+]

@@ -1,0 +1,10 @@
+menu "NIAIO 手机连接"
+    config NIAIO_AP_SSID
+        string "设备 Wi-Fi 热点名称"
+        default "NIAIO-Monitor"
+    config NIAIO_AP_PASSWORD
+        string "设备 Wi-Fi 密码（8～63 个 ASCII 字符）"
+        default "niaio-v1-test"
+        help
+            开发测试凭据，请在正式使用前修改。
+endmenu

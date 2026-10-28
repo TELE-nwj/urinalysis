@@ -12,7 +12,7 @@
 
 ## 历史进度
 
-> 快照日期：2026-09-14 ｜ 硬件：ESP32-S3 ｜ SDK：ESP-IDF v5.5.5
+> 快照日期：2026-09-22 ｜ 硬件：ESP32-S3 ｜ SDK：ESP-IDF v5.5.5
 
 ### 目录说明
 
@@ -39,12 +39,15 @@
 | 串口屏 UART1 | MCU TX = `GPIO17` → 屏 RX；MCU RX = `GPIO18` ← 屏 TX，115200 8N1 |
 | 滴传感器 | `GPIO10`（上升沿中断，0.5 s 消抖） |
 | CH376 软 SPI | SCS = `GPIO2`、SDI = `GPIO41`、SDO = `GPIO40`、SCK = `GPIO42`、INT = `GPIO1` |
+| 按键 | 2 路：`GPIO8`、`GPIO9`（低有效 + 内部上拉） |
+| 电池检测 | `GPIO7` —— **ADC 分压检测**（引脚宏已就位，驱动待实现；INA228 方案已取消） |
 
 ### 已知限制 / 待办
 
 - 每滴容积按 `0.05 ml` 估算（`URINE_DROP_ML_DEFAULT`），**尚未标定**
 - CH376 的 `SET_FILE_NAME(0x2F)` 只支持**大写 8.3 短文件名**；用小写会让目录项损坏，导致 PC 端报"找不到文件"
-- `driver/key`、`driver/battery` 已实现但**尚未接入业务逻辑**
+- `driver/key`（2 路按键，`GPIO8`/`GPIO9`）尚未接入业务；`driver/battery` 仍是占位 stub，
+  采样方案为 **ADC 分压 @ `GPIO7`**（**INA228 电量计方案已取消**）
 - 速率 7 s 无新滴归零，在现场**尚未复验**
 
 ### 文档索引

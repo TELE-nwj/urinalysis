@@ -1,0 +1,14 @@
+# Python 构建/缓存产物
+build/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller 中间文件
+*.spec
+SerialMonitor.spec
+
+# 本工程不需要进版本库的临时文件
+*.log
+preview_*.png

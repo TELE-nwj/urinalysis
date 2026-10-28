@@ -1,0 +1,1102 @@
+/* ============================================================================
+ * serial-monitor  ·  style.qss
+ * ESP32-S3 尿量计 PC 上位机 —— 浅色科研仪器风样式表（Qt 5.15 / PyQt5）
+ * ----------------------------------------------------------------------------
+ * 【设计意图】
+ *   这是一台实验室仪器配套的上位机，不是消费级 App。参考物：示波器上位机、
+ *   串口调试助手、LabVIEW 面板。四条准则：
+ *     1. 浅色白底 —— 用户明确要求"主题偏白一点，符合科研上位机"；
+ *     2. 克制 —— 不用渐变、不用阴影、不用大圆角、不用高饱和色；
+ *     3. 可扫描性优先 —— 数值最大最深蓝、标签退成灰、分区边界永远清晰；
+ *     4. 高信息密度但"密而不挤" —— 行高与内边距逐项调过，长时间盯不累。
+ *   层次只靠三样东西：1px 细边框 + 浅底色块 + 字号/字重差。没有第四样。
+ *   本文件是界面视觉的唯一来源：ui_main.py 里不出现任何颜色/字体/边框。
+ *
+ * 【配色表（唯一色源，禁止自创色值；rgba() 写法是本色的透明度变体）】
+ *   #F2F4F7   应用底色（窗口底、面板之间的缝隙）
+ *   #FFFFFF   面板底（分区卡片、表格、输入框、按钮）
+ *   #E8EDF3   分区标题条底 / 表头底 / 状态栏底 / 卡片标题下的细则线
+ *   #D8DEE6   细边框（唯一允许的分隔手段）
+ *   #1A2129   主文字
+ *   #5A6674   次文字 / 字段名 / 单位 / 状态栏 / 中性徽章
+ *   #0B3A6F   数值（重要数据专用：等宽 + 深蓝）
+ *   #1F6FEB   强调 / 主按钮 / 焦点环 / 选中态 / 测量中
+ *   #1A7F37   成功 / 就绪 / 正常 / 已连接
+ *   #9A6700   警告 / 少尿 / 多尿 / 暂停
+ *   #CF222E   错误 / 尿袋满 / 写盘失败 / 断开
+ *   #FBFCFD   日志区底（极淡，比纯白低一点对比度，久看不刺眼）
+ *   #FFF5F5   日志错误行底   ┐ 二者作用于 QTextDocument 的整行底色，
+ *   #FFFBEB   日志警告行底   ┘ 由 ui_main.py 的 LOG_TEXT_COLORS["bg_E"/"bg_W"] 落实
+ *
+ * 【字体约定】
+ *   界面正文：      "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑", sans-serif
+ *   数值/日志/表格： "Consolas", "Cascadia Mono", monospace
+ *   全部用 px，随系统 DPI 缩放；不引用任何外部字体与图片资源。
+ *   （注：Qt5 把 CSS 字重映射到旧刻度 —— 600 → Bold(75)、500 → DemiBold(62)）
+ *
+ * ----------------------------------------------------------------------------
+ * 【界面契约 —— 与 ui_main.py 现状一一对应，改样式前先看这里】
+ *
+ *  结构（objectName）
+ *    main_window / central / conn_bar / top_cards
+ *    main_splitter（垂直：上 = U 盘记录，下 = 日志）
+ *    urine_card / storage_card / network_card      ← QGroupBox 分区卡（标题条由本表画）
+ *    records_section / log_section                 ← 同样是 QGroupBox
+ *    port_combo / baud_combo / refresh_ports_btn / connect_btn
+ *    export_records_btn / export_log_btn
+ *    level_filter / tag_filter / search_edit / log_view
+ *    records_table / records_count_label / log_count_label
+ *    status_bar / status_label / rx_count_label
+ *    —— 迭代2 追加（规则在文件末尾 §16 / §17）：
+ *       clear_btn / storage_detail_btn / network_detail_btn
+ *       detail_dialog / detail_table / detail_log_view
+ *       detail_search_edit / detail_count_label
+ *       detail_copy_btn / detail_close_btn
+ *      ⚠ detail_title / detail_toolbar 是**备用**选择器：ui_main.py 当前
+ *        用的是系统标题栏与裸按钮布局，没有这两个控件（详见 §17 注释）。
+ *
+ *  动态属性（ui_main.py 用 setProperty + repolish 写，本表据此变色）
+ *    role="label"          字段名（累计尿量、当前文件…）→ 次色，退后
+ *    role="value"          主数值（累计尿量/实时速率/累计滴数/运行时长）
+ *    role="value-sm"       次数值（会话名、MAC、IP、行数、失败次数）
+ *    role="hint"           辅助说明与计数（共 N 条、N / N 行、失败详情）
+ *    role="status"         状态徽章（运行状态、报警、U 盘状态、手机连接）
+ *    role="unit"/"text"/"sectionTitle"   备用语义，本表已支持
+ *    state="ok|warn|error|idle|run"   唯一的语义色开关；不设 = 中性灰
+ *    connected="true|false"           连接按钮的两种形态
+ *    variant="danger|primary"         连接按钮的语义变体
+ *
+ *  语义色映射（医学语境，宁可不表态也绝不谎报）：
+ *    ok → 绿   warn → 琥珀   error → 红   run → 蓝   idle/未设 → 灰
+ *    ⚠ 徽章默认中性灰是故意的：没有 state 证据时绝不允许显示绿色，
+ *      把"U 盘不可用"画成就绪是会害人的。状态变了要重新 setProperty + repolish。
+ *
+ * ----------------------------------------------------------------------------
+ * 【已经由代码侧落实、本表不再重复的部分】
+ *   1. 日志"错误行底 #FFF5F5 / 警告行底 #FFFBEB"与分级文字色：ui_main.py 的
+ *      LOG_TEXT_COLORS（已在用本表色值）+ QTextCharFormat/QTextBlockFormat。
+ *   2. 表格"密而不挤"：setDefaultSectionSize(26) / setWordWrap(False) /
+ *      SelectRows / setShowGrid(False) / 隐藏行号列，都在 ui_main.py 里设好。
+ *   3. 勾选框没有对勾：在"不引用外部资源"的约束下，选中态用实心色块表达。
+ *      若必须要有对勾，在代码里给 indicator 设 QIcon，或删掉本表该段用系统原生。
+ *   4. 下拉框箭头：交给系统样式绘制（本表只画箭区的分隔线与浅底）。
+ * ========================================================================= */
+
+
+/* ============================================================================
+ * 1. 全局基础
+ * ========================================================================= */
+
+/* 全局字体与主文字色：只设字体/颜色，绝不设背景 —— 否则会把每个子控件刷成灰底 */
+QWidget {
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-size: 12px;
+    color: #1A2129;
+}
+
+/* 主窗口：应用底色，分区卡片之间露出的就是这一层 */
+QMainWindow {
+    background-color: #F2F4F7;
+}
+
+/* 中央容器：承载连接条、三张卡片、记录表与日志 */
+QWidget#central, QWidget#central_widget {
+    background-color: #F2F4F7;
+}
+
+/* 滚动区：不画边框，避免与外层卡片出现双线 */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+
+/* ============================================================================
+ * 2. 分区卡片（QGroupBox）—— 界面的主要骨架
+ * ========================================================================= */
+
+/* 白底 + 1px 细边框 + 顶部 28px 浅色标题条。
+   标题条用"粗 top 边框"实现：一条整宽色块，不需要图片、不需要阴影。
+   ui_main.py 把卡片内布局的 margins 设成 0，内边距完全交 here 的 padding。 */
+QGroupBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-top: 28px solid #E8EDF3;
+    border-radius: 3px;
+    margin: 0px;                      /* 卡片之间靠布局 spacing 分开，不靠 margin */
+    padding: 10px 12px 12px 12px;     /* 内容离边框 10~12px：密而不挤 */
+    font-size: 12px;
+    font-weight: 600;
+    color: #1A2129;
+}
+
+/* 标题文字：画在上面那条 28px 色块里（原点取 border 才能落进色块内） */
+QGroupBox::title {
+    subcontrol-origin: border;
+    subcontrol-position: top left;
+    left: 0px;
+    top: 0px;
+    padding: 6px 12px;                /* 上 6px ≈ 让文字在 28px 条里垂直居中 */
+    background-color: transparent;    /* 透出下面的标题条底色 */
+    color: #1A2129;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* 顶部连接条：白底细边框，与卡片同一套语言 —— 界面上唯一的操作区 */
+QWidget#conn_bar, QFrame#conn_bar,
+QWidget#top_bar, QFrame#top_bar,
+QWidget#control_bar, QFrame#control_bar {
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+}
+
+/* 三张卡片并排的容器：本身不画东西，只负责 8px 间隙 */
+QWidget#top_cards {
+    background-color: transparent;
+}
+
+
+/* ============================================================================
+ * 3. 文字体系 —— 层次的全部来源
+ * ========================================================================= */
+
+/* 字段名（role="label"）：一律退成次色，让同行的数值自己跳出来。
+   不写 role 的 QLabel 也走这条默认，保证任何漏标的标签都是"退后"的。 */
+QLabel {
+    color: #5A6674;
+    background-color: transparent;
+    font-size: 12px;
+}
+
+/* 需要与字段名区分的说明性正文 */
+QLabel[role="text"] {
+    color: #1A2129;
+}
+
+/* 主数值（role="value"）：等宽 + 深蓝 + 17px。
+   等宽是为了数字变化时列宽不抖，17px 让 4 个数据在一张卡里排得下又不失份量。 */
+QLabel[role="value"] {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 17px;
+    font-weight: 500;
+    color: #0B3A6F;
+}
+
+/* 头号数值：累计尿量。整屏唯一的 22px 大数，操作者抬眼就能读到 */
+QLabel#total_ml_value {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: #0B3A6F;
+}
+
+/* 次数值（role="value-sm"）：标识与计数，同样是数据但要给主数值让路 */
+QLabel[role="value-sm"] {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0B3A6F;
+}
+
+/* ⚠ 这里刻意不给数值列 objectName 写"兜底色"：
+   id 选择器的优先级高于 [role][state]，一旦给 #write_failures_value 之类写上
+   color，第 4 节的 state 变色就会被压住（"写盘失败 3 次"永远变不红）。
+   数值的颜色只由 role + state 决定 —— 单一机制，才不会互相打架。 */
+
+/* 辅助说明与计数（role="hint"）：最小一级，只做注解不参与阅读 */
+QLabel[role="hint"], QLabel#hint_label {
+    font-size: 11px;
+    color: #5A6674;
+}
+
+/* 计数文字用等宽，数字跳动时不会把标题挤来挤去 */
+QLabel#records_count_label, QLabel#log_count_label {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 11px;
+    color: #5A6674;
+}
+
+/* 单位：跟在数值右下方，小一号灰色，只注解不抢视线 */
+QLabel[role="unit"] {
+    font-size: 11px;
+    color: #5A6674;
+    padding: 0px 0px 2px 2px;
+}
+
+/* 备用：不用 QGroupBox 而是自绘卡片时，整宽标题条 */
+QLabel[role="sectionTitle"] {
+    background-color: #E8EDF3;
+    color: #1A2129;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-bottom: 1px solid #D8DEE6;
+}
+
+
+/* ============================================================================
+ * 4. 语义色与状态徽章
+ * ========================================================================= */
+/* 说明：本节刻意放在文字体系之后 —— 同样特异性的规则，后出现的胜出。
+   另外对 role="value"/"value-sm" 再写一遍带 state 的选择器（两个属性 > 一个），
+   这样"写盘失败 3 次"这类数值无论排版如何都会稳稳变红。 */
+
+/* --- 4.1 文字色：任何设了 state 的 QLabel 都会变色（含数值标签） --- */
+QLabel[state="ok"],
+QLabel[role="value"][state="ok"], QLabel[role="value-sm"][state="ok"]       { color: #1A7F37; }
+QLabel[state="warn"],
+QLabel[role="value"][state="warn"], QLabel[role="value-sm"][state="warn"]    { color: #9A6700; }
+QLabel[state="error"],
+QLabel[role="value"][state="error"], QLabel[role="value-sm"][state="error"]  { color: #CF222E; }
+QLabel[state="run"],
+QLabel[role="value"][state="run"], QLabel[role="value-sm"][state="run"]      { color: #1F6FEB; }
+QLabel[state="idle"],
+QLabel[role="value"][state="idle"], QLabel[role="value-sm"][state="idle"]    { color: #5A6674; }
+
+/* --- 4.2 状态徽章：四个短状态词做小药丸，扫一眼就知道好坏 --- */
+
+/* 徽章形状（中性灰）：浅底 + 淡边框 + 小圆角，不做阴影。
+   不设 state 就永远停在这个中性态 —— 这是有意的，见文件头"语义色映射"。 */
+QLabel[role="status"],
+#state_value, #alert_value, #health_value, #connected_value {
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 9px;
+    background-color: #F2F4F7;
+    border: 1px solid #D8DEE6;
+    color: #5A6674;
+}
+
+/* 绿：一切"正常" —— 报警 A / U 盘就绪 / 手机已连接 */
+QLabel[role="status"][state="ok"],
+#state_value[state="ok"], #alert_value[state="ok"],
+#health_value[state="ok"], #connected_value[state="ok"] {
+    color: #1A7F37;
+    background-color: rgba(26, 127, 55, 0.10);
+    border: 1px solid rgba(26, 127, 55, 0.28);
+}
+
+/* 琥珀：要留意但不必惊慌 —— 少尿 / 多尿 / 测量暂停 */
+QLabel[role="status"][state="warn"],
+#state_value[state="warn"], #alert_value[state="warn"],
+#health_value[state="warn"], #connected_value[state="warn"] {
+    color: #9A6700;
+    background-color: rgba(154, 103, 0, 0.10);
+    border: 1px solid rgba(154, 103, 0, 0.28);
+}
+
+/* 红：必须处理 —— 尿袋满 E / U 盘不可用 / 写盘失败 */
+QLabel[role="status"][state="error"],
+#state_value[state="error"], #alert_value[state="error"],
+#health_value[state="error"], #connected_value[state="error"] {
+    color: #CF222E;
+    background-color: rgba(207, 34, 46, 0.10);
+    border: 1px solid rgba(207, 34, 46, 0.28);
+}
+
+/* 蓝：正在进行 —— 测量中 */
+QLabel[role="status"][state="run"],
+#state_value[state="run"], #alert_value[state="run"],
+#health_value[state="run"], #connected_value[state="run"] {
+    color: #1F6FEB;
+    background-color: rgba(31, 111, 235, 0.10);
+    border: 1px solid rgba(31, 111, 235, 0.28);
+}
+
+/* 灰：待开始 / 没证据 —— 绝不把"不知道"画成绿色 */
+QLabel[role="status"][state="idle"],
+#state_value[state="idle"], #alert_value[state="idle"],
+#health_value[state="idle"], #connected_value[state="idle"] {
+    color: #5A6674;
+    background-color: #F2F4F7;
+    border: 1px solid #D8DEE6;
+}
+
+
+/* ============================================================================
+ * 5. 按钮
+ * ========================================================================= */
+
+/* 默认按钮 = 次按钮：白底 + 细边框，只有悬停才出现强调色 */
+QPushButton {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 14px;              /* 3px 上下 + 18px 行高 ≈ 整高 26px，不虚胖 */
+    min-height: 18px;
+    min-width: 60px;
+    font-size: 12px;
+}
+/* 悬停：底色下沉一档 + 边框转强调色 */
+QPushButton:hover {
+    background-color: #F2F4F7;
+    border: 1px solid #1F6FEB;
+}
+/* 按下：再深一档，给出明确的物理反馈 */
+QPushButton:pressed {
+    background-color: #E8EDF3;
+    border: 1px solid #0B3A6F;
+}
+/* 键盘焦点：深蓝细边框，不用系统虚线框 */
+QPushButton:focus {
+    border: 1px solid #0B3A6F;
+    outline: none;
+}
+/* 禁用：文字与边框一起变淡，明确"现在不能点" */
+QPushButton:disabled {
+    background-color: #F2F4F7;
+    color: rgba(90, 102, 116, 0.55);
+    border: 1px solid #D8DEE6;
+}
+
+/* 主按钮（未连接时）：整个界面唯一的实心蓝，位置固定，一眼可找 */
+QPushButton#connect_btn,
+QPushButton#connect_btn[connected="false"] {
+    background-color: #1F6FEB;
+    color: #FFFFFF;
+    border: 1px solid #1F6FEB;
+    padding: 3px 20px;
+    font-weight: 600;
+}
+QPushButton#connect_btn:hover {
+    background-color: #0B3A6F;
+    border: 1px solid #0B3A6F;
+}
+QPushButton#connect_btn:pressed {
+    background-color: #0B3A6F;
+    border: 1px solid #0B3A6F;
+}
+QPushButton#connect_btn:disabled {
+    background-color: #E8EDF3;
+    color: rgba(90, 102, 116, 0.55);
+    border: 1px solid #D8DEE6;
+}
+
+/* 已连接时按钮变成"断开"：退回白底 + 红色描边文字。
+   既能一眼看出"现在连着"，又不会像实心红那样在安静的浅色界面上喊叫。 */
+QPushButton#connect_btn[connected="true"],
+QPushButton#connect_btn[variant="danger"] {
+    background-color: #FFFFFF;
+    color: #CF222E;
+    border: 1px solid #CF222E;
+    font-weight: 600;
+}
+QPushButton#connect_btn[connected="true"]:hover,
+QPushButton#connect_btn[variant="danger"]:hover {
+    background-color: rgba(207, 34, 46, 0.06);
+    border: 1px solid #CF222E;
+}
+
+/* 次按钮（导出 / 刷新）：白底，与主按钮同排时绝不抢注意力 */
+QPushButton#export_records_btn,
+QPushButton#export_log_btn,
+QPushButton#refresh_ports_btn {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+}
+QPushButton#export_records_btn:hover,
+QPushButton#export_log_btn:hover,
+QPushButton#refresh_ports_btn:hover {
+    background-color: #F2F4F7;
+    border: 1px solid #1F6FEB;
+}
+
+/* 危险动作（变体）：平时安静，只在悬停时透出错误色 */
+QPushButton[variant="danger"]:hover {
+    color: #CF222E;
+    border: 1px solid #CF222E;
+    background-color: rgba(207, 34, 46, 0.06);
+}
+
+/* 纯图标 / 紧凑按钮 */
+QToolButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 2px;
+}
+QToolButton:hover {
+    background-color: #F2F4F7;
+    border: 1px solid #D8DEE6;
+}
+
+
+/* ============================================================================
+ * 6. 输入控件
+ * ========================================================================= */
+
+/* 单行输入：白底 + 细边框；聚焦时边框转强调色（唯一的聚焦提示） */
+QLineEdit {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 8px;
+    min-height: 18px;
+    font-size: 12px;
+    selection-background-color: rgba(31, 111, 235, 0.18);
+    selection-color: #1A2129;
+}
+QLineEdit:hover {
+    border: 1px solid rgba(90, 102, 116, 0.55);
+}
+QLineEdit:focus {
+    border: 1px solid #1F6FEB;
+}
+QLineEdit:disabled {
+    background-color: #F2F4F7;
+    color: rgba(90, 102, 116, 0.55);
+    border: 1px solid #D8DEE6;
+}
+
+/* 日志搜索框：等宽字体，方便看清 TAG 与关键字 */
+QLineEdit#search_edit {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 12px;
+    color: #1A2129;
+    background-color: #FFFFFF;
+    padding: 3px 10px;
+    min-width: 160px;
+}
+QLineEdit#search_edit:focus {
+    border: 1px solid #1F6FEB;
+}
+
+
+/* ============================================================================
+ * 7. 下拉框（串口 / 波特率 / 日志级别 / TAG 过滤）
+ * ========================================================================= */
+
+/* 与输入框完全同构：白底、细边框、同高 —— 整排控件看起来是一条线 */
+QComboBox {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 8px;
+    min-height: 18px;
+    min-width: 80px;
+    font-size: 12px;
+}
+QComboBox:hover {
+    border: 1px solid rgba(90, 102, 116, 0.55);
+}
+QComboBox:focus, QComboBox:on {
+    border: 1px solid #1F6FEB;
+}
+QComboBox:disabled {
+    background-color: #F2F4F7;
+    color: rgba(90, 102, 116, 0.55);
+    border: 1px solid #D8DEE6;
+}
+
+/* 箭区：一条分隔线 + 浅底；箭头图形由系统样式绘制（不引用外部图片） */
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: 1px solid #D8DEE6;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    background-color: #F2F4F7;
+}
+QComboBox::drop-down:hover {
+    background-color: #E8EDF3;
+}
+
+/* 展开的列表：白底细边框，选中项用淡蓝而不是实心蓝 */
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    padding: 2px;
+    outline: none;
+    selection-background-color: rgba(31, 111, 235, 0.10);
+    selection-color: #0B3A6F;
+}
+
+/* 串口名带设备描述，给更宽的下限并用等宽字体，COM 号对齐好看 */
+QComboBox#port_combo {
+    min-width: 170px;
+    font-family: "Consolas", "Cascadia Mono", monospace;
+}
+/* 级别/TAG 过滤器是短语，不需要太宽，密一点 */
+QComboBox#level_filter, QComboBox#tag_filter {
+    min-width: 76px;
+}
+
+
+/* ============================================================================
+ * 8. 勾选控件（备用：筛选开关）
+ * ========================================================================= */
+
+/* 文字与间距 */
+QCheckBox, QRadioButton {
+    color: #5A6674;
+    background-color: transparent;
+    spacing: 6px;
+    font-size: 12px;
+    padding: 2px 0px;
+}
+QCheckBox:hover, QRadioButton:hover,
+QCheckBox:checked, QRadioButton:checked {
+    color: #1A2129;
+}
+QCheckBox:disabled, QRadioButton:disabled {
+    color: rgba(90, 102, 116, 0.55);
+}
+
+/* 指示器：自绘方框/圆框，不依赖任何图片，跨平台表现一致。
+   选中 = 实心强调色块（见文件头【已经由代码侧落实】第 3 条）。 */
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #D8DEE6;
+    background-color: #FFFFFF;
+}
+QCheckBox::indicator    { border-radius: 2px; }
+QRadioButton::indicator { border-radius: 7px; }
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border: 1px solid #1F6FEB;
+}
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    background-color: #1F6FEB;
+    border: 1px solid #1F6FEB;
+}
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled {
+    background-color: #F2F4F7;
+    border: 1px solid #D8DEE6;
+}
+
+
+/* ============================================================================
+ * 9. U 盘记录表
+ * ========================================================================= */
+
+/* 表格：白底 + 极淡斑马纹。代码里已 setShowGrid(False)、隐藏行号列，
+   所以行与行只靠 #FBFCFD 斑马纹 + 26px 行高区分 —— 密而不挤 */
+QTableView, QTableWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #FBFCFD;
+    color: #1A2129;
+    gridline-color: #E8EDF3;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 12px;
+    outline: none;
+    selection-background-color: rgba(31, 111, 235, 0.10);
+    selection-color: #0B3A6F;
+}
+
+/* 单元格：左右 8px 让数字列不粘连，上下 3px 撑出约 26px 的舒适行高 */
+QTableView::item, QTableWidget::item {
+    padding: 3px 8px;
+    border: none;
+}
+/* 悬停行：比斑马纹再深一点，表示"我正在看这一行" */
+QTableView::item:hover, QTableWidget::item:hover {
+    background-color: rgba(31, 111, 235, 0.05);
+}
+/* 选中行：淡蓝底 + 深蓝字（代码里已是 SelectRows 整行选中） */
+QTableView::item:selected, QTableWidget::item:selected {
+    background-color: rgba(31, 111, 235, 0.10);
+    color: #0B3A6F;
+}
+
+/* 表头：与分区标题条同色，形成统一的"标题层"；只比行高高一点点 */
+QHeaderView {
+    background-color: #E8EDF3;
+    border: none;
+}
+QHeaderView::section {
+    background-color: #E8EDF3;
+    color: #1A2129;
+    border: none;
+    border-right: 1px solid #D8DEE6;
+    border-bottom: 1px solid #D8DEE6;
+    padding: 4px 8px;
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+}
+QHeaderView::section:hover {
+    background-color: #D8DEE6;
+}
+QHeaderView::section:last {
+    border-right: none;
+}
+/* 行号列（当前隐藏，留作备用）：比列表头再淡一档 */
+QHeaderView::section:vertical {
+    background-color: #F2F4F7;
+    color: #5A6674;
+    font-size: 11px;
+    font-weight: 400;
+    padding: 0px 6px;
+    border-right: 1px solid #D8DEE6;
+}
+/* 左上角小方块：跟着表头走，否则会露出一块突兀的白 */
+QTableCornerButton::section {
+    background-color: #E8EDF3;
+    border: none;
+    border-right: 1px solid #D8DEE6;
+    border-bottom: 1px solid #D8DEE6;
+}
+/* 横竖滚动条交汇处 */
+QAbstractScrollArea::corner {
+    background-color: #F2F4F7;
+    border: none;
+}
+
+
+/* ============================================================================
+ * 10. 日志区
+ * ========================================================================= */
+
+/* 等宽 + 极淡底（#FBFCFD 而非纯白）：既与卡片区分，又不像深色控制台那样压眼睛 */
+QPlainTextEdit, QTextEdit {
+    background-color: #FBFCFD;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    selection-background-color: rgba(31, 111, 235, 0.18);
+    selection-color: #1A2129;
+    padding: 2px;
+}
+QPlainTextEdit#log_view, QTextEdit#log_view {
+    background-color: #FBFCFD;
+    color: #1A2129;
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 12px;
+    border: 1px solid #D8DEE6;
+    padding: 4px 6px;
+}
+/* 只读文本域（日志本体、失败详情）：底色保持在 #FBFCFD，绝不发白 */
+QPlainTextEdit[readOnly="true"], QTextEdit[readOnly="true"] {
+    background-color: #FBFCFD;
+}
+/* 日志区常常一直持有焦点，不给它加蓝框，免得整块界面发蓝 */
+QPlainTextEdit#log_view:focus, QTextEdit#log_view:focus {
+    border: 1px solid #D8DEE6;
+}
+
+
+/* ============================================================================
+ * 11. 列表（备用：报警/结论时间线）
+ * ========================================================================= */
+
+QListWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    outline: none;
+    color: #1A2129;
+    font-size: 12px;
+}
+QListWidget::item {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F2F4F7;
+    color: #1A2129;
+}
+QListWidget::item:hover {
+    background-color: rgba(31, 111, 235, 0.05);
+}
+QListWidget::item:selected {
+    background-color: rgba(31, 111, 235, 0.10);
+    color: #0B3A6F;
+}
+
+
+/* ============================================================================
+ * 12. 分隔条（记录表 / 日志之间那条可拖动的缝）
+ * ========================================================================= */
+
+QSplitter {
+    background-color: #F2F4F7;
+}
+QSplitter::handle {
+    background-color: #E8EDF3;
+}
+QSplitter::handle:horizontal { width: 4px; }
+QSplitter::handle:vertical   { height: 4px; }
+/* 悬停/拖动时转强调色 —— 明确告诉操作者"这条可以拖" */
+QSplitter::handle:hover {
+    background-color: #1F6FEB;
+}
+QSplitter::handle:pressed {
+    background-color: #0B3A6F;
+}
+
+
+/* ============================================================================
+ * 13. 滚动条 —— 细、浅灰、无箭头，绝不打断内容
+ * ========================================================================= */
+
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+QScrollBar:horizontal {
+    background-color: transparent;
+    height: 8px;
+    margin: 0px;
+    border: none;
+}
+/* 滑块：次文字的 30% 透明度，安静但足够找到 */
+QScrollBar::handle:vertical {
+    background-color: rgba(90, 102, 116, 0.30);
+    min-height: 28px;
+    border-radius: 4px;
+    margin: 1px;
+}
+QScrollBar::handle:horizontal {
+    background-color: rgba(90, 102, 116, 0.30);
+    min-width: 28px;
+    border-radius: 4px;
+    margin: 1px;
+}
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background-color: rgba(90, 102, 116, 0.55);
+}
+QScrollBar::handle:vertical:pressed,
+QScrollBar::handle:horizontal:pressed {
+    background-color: rgba(31, 111, 235, 0.75);
+}
+/* 去掉两端箭头按钮（连它占的格子一起去掉），并让滑轨完全透明 */
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0px;
+    height: 0px;
+    background-color: transparent;
+    border: none;
+}
+QScrollBar::add-page, QScrollBar::sub-page {
+    background-color: transparent;
+}
+QScrollBar::up-arrow, QScrollBar::down-arrow,
+QScrollBar::left-arrow, QScrollBar::right-arrow {
+    width: 0px;
+    height: 0px;
+    background-color: transparent;
+}
+
+
+/* ============================================================================
+ * 14. 状态栏 —— 常驻显示串口状态与接收行数，低调到底
+ * ========================================================================= */
+
+QStatusBar {
+    background-color: #E8EDF3;
+    border-top: 1px solid #D8DEE6;
+    color: #5A6674;
+    font-size: 11px;
+    min-height: 22px;
+}
+/* 去掉状态栏为每个常驻控件画的边框 */
+QStatusBar::item {
+    border: none;
+}
+QStatusBar QLabel {
+    color: #5A6674;
+    font-size: 11px;
+    padding: 0px 6px;
+}
+/* 接收行数是数字：等宽深蓝，跳动时不会左右晃（覆盖 role=value-sm 的 13px） */
+QStatusBar QLabel[role="value-sm"],
+QLabel#rx_count_label {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 11px;
+    color: #0B3A6F;
+}
+
+
+/* ============================================================================
+ * 15. 菜单与提示
+ * ========================================================================= */
+
+QMenu {
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 4px 0px;
+    color: #1A2129;
+}
+QMenu::item {
+    padding: 5px 24px 5px 12px;
+    background-color: transparent;
+}
+QMenu::item:selected {
+    background-color: rgba(31, 111, 235, 0.10);
+    color: #0B3A6F;
+}
+QMenu::item:disabled {
+    color: rgba(90, 102, 116, 0.55);
+}
+QMenu::separator {
+    height: 1px;
+    background-color: #E8EDF3;
+    margin: 4px 8px;
+}
+
+/* 工具提示：白底细边框，不用系统默认的黄，免得在浅色界面里过于突兀 */
+QToolTip {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+
+/* ============================================================================
+ * 16. 迭代2 追加：轻量按钮（日志「清除」/ 卡片「详情」）
+ * ----------------------------------------------------------------------------
+ *  设计意图：这三种按钮都是"次要中的次要" —— 它们旁边已经有下拉框、搜索框，
+ *  以及全屏唯一的实心蓝「连接」。如果它们也做成白底描边的方块，一排里就会
+ *  出现三四个同重的方块，界面立刻变吵。所以一律做成**扁平文字按钮**：
+ *  透明底、无实心边框、灰字，只在 hover/焦点时才浮出一层淡底 —— 读起来像
+ *  文档里可点的文字，而不是一个控件。
+ *  细节：默认就留一条**透明边框**，hover 时只换颜色不换粗细，避免 1px 的
+ *  布局抖动（这是文字按钮最容易露怯的地方）。
+ *  另外：Qt 样式表没有 text-decoration，所以"下划线"做不了，hover 提示
+ *  统一用淡底表达；若一定要下划线，只能在代码里给字体设 underline。
+ * ========================================================================= */
+
+/* ⚠ 选择器**不带类型限定**（不写 QPushButton#id / QToolButton#id）。
+   原因：ui_main.py 里 clear_btn 是 QPushButton，而两个「详情」是 **QToolButton**
+   （autoRaise，role="link"）。Qt 的 QSS 里 `QPushButton#id` 只匹配 QPushButton，
+   写成带类型的版本会让详情按钮完全吃不到样式（退回 Qt 默认的边框按钮）。
+   写裸 `#id` 则对任何控件类都成立，是这里唯一稳的写法。
+   同时用 `QToolButton[role="link"]` 做语义别名：以后再加同类入口，
+   只要设 role="link" 就自动获得同一套扁平外观。 */
+
+/* 静止态：透明底 + 透明边框 + 次文字色。
+   padding/min-height 与其它控件对齐，整行高度仍是 26px —— "轻"是指分量，
+   不是指点不准。min-width 归零，让「详情」两个字的按钮正好裹住文字。 */
+#clear_btn,
+#storage_detail_btn,
+#network_detail_btn,
+QToolButton[role="link"] {
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: #5A6674;
+    font-weight: 400;
+    padding: 2px 8px;
+    min-width: 0px;
+    min-height: 16px;
+}
+
+/* 悬停：浮出一层淡蓝底 + 文字转强调色 —— "这里可以点" */
+#clear_btn:hover,
+#storage_detail_btn:hover,
+#network_detail_btn:hover,
+QToolButton[role="link"]:hover {
+    background-color: rgba(31, 111, 235, 0.10);
+    border: 1px solid rgba(31, 111, 235, 0.28);
+    color: #1F6FEB;
+}
+
+/* 按下：淡底再深一档。刻意不跳成实心蓝 —— 那会让它一瞬间比主按钮还重 */
+#clear_btn:pressed,
+#storage_detail_btn:pressed,
+#network_detail_btn:pressed,
+QToolButton[role="link"]:pressed {
+    background-color: rgba(31, 111, 235, 0.18);
+    border: 1px solid #1F6FEB;
+    color: #0B3A6F;
+}
+
+/* 键盘焦点：与悬停同一套视觉，保证纯键盘操作时也看得见落点 */
+#clear_btn:focus,
+#storage_detail_btn:focus,
+#network_detail_btn:focus,
+QToolButton[role="link"]:focus {
+    border: 1px solid #1F6FEB;
+    outline: none;
+}
+
+/* 禁用：压到几乎隐形（仍然占位，布局不跳） */
+#clear_btn:disabled,
+#storage_detail_btn:disabled,
+#network_detail_btn:disabled,
+QToolButton[role="link"]:disabled {
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: rgba(90, 102, 116, 0.40);
+}
+
+/* 「清除」是破坏性动作：静止时和别的轻按钮一样安静，但 hover 时透出淡红，
+   提前告诉操作者"这一下会丢东西"。破坏性提示只在动作发生前出现，最有用。 */
+#clear_btn:hover {
+    background-color: rgba(207, 34, 46, 0.06);
+    border: 1px solid rgba(207, 34, 46, 0.28);
+    color: #CF222E;
+}
+#clear_btn:pressed {
+    background-color: rgba(207, 34, 46, 0.12);
+    border: 1px solid #CF222E;
+    color: #CF222E;
+}
+
+
+/* ============================================================================
+ * 17. 迭代2 追加：详情对话框（QDialog）
+ * ----------------------------------------------------------------------------
+ *  定位：一个"放大镜"式窗口 —— 把某个分区里的原始信息摊开给人看
+ *  （结构化字段表 + 原始日志）。视觉上继续做减法：纯白底、1px 细边框、
+ *  无阴影无渐变；用"标题 + 细则线"分层，与主界面的分区卡完全同源，
+ *  让用户不觉得跳到了另一个程序。
+ * ========================================================================= */
+
+/* 对话框底色：不给的话会露出系统默认的窗口灰，与 #FFFFFF 的面板语言不一致 */
+QDialog {
+    background-color: #FFFFFF;
+}
+
+/* 对话框本体：白底 + 细边框，圆角沿用全局最大值 3px。
+   注：顶层窗口的边框/圆角最终由窗口管理器绘制，这里主要保证"内嵌为子控件"
+   或自定义无边框标题栏时也成立，同时把底色钉死在配色表内。 */
+QDialog#detail_dialog {
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+}
+
+/* 对话框标题（**备用**）：ui_main.py 的 DetailDialog 目前用系统标题栏
+   （setWindowTitle），并没有名为 detail_title 的 QLabel，所以这条现在不生效。
+   保留的原因：若将来改成自绘标题（无边框窗口 + 顶部标题条），命名即生效。
+   这不是"已覆盖"，别把它算进覆盖清单。 */
+QLabel#detail_title {
+    color: #1A2129;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: transparent;
+    padding: 0px 0px 6px 0px;
+    border-bottom: 1px solid #E8EDF3;
+}
+
+/* 结构化字段表：与主记录表同源（同表头、同网格线），但**去掉斑马纹** ——
+   详情表是"键-值"清单，行数少、每行都是唯一事实，斑马纹只会添乱。
+   行高比主表再压紧 1px，一屏能多看了几行。 */
+QTableView#detail_table, QTableWidget#detail_table {
+    background-color: #FFFFFF;
+    alternate-background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    gridline-color: #E8EDF3;
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-size: 12px;
+}
+QTableView#detail_table::item, QTableWidget#detail_table::item {
+    padding: 2px 8px;
+    border: none;
+}
+/* 悬停行 / 选中行：与主表同一套淡蓝，不引入新的交互语言 */
+QTableView#detail_table::item:hover, QTableWidget#detail_table::item:hover {
+    background-color: rgba(31, 111, 235, 0.05);
+}
+QTableView#detail_table::item:selected, QTableWidget#detail_table::item:selected {
+    background-color: rgba(31, 111, 235, 0.10);
+    color: #0B3A6F;
+}
+
+/* 原始日志区：等宽 12px + #FBFCFD 底，与主界面日志区完全一致。
+   ⚠ 这里必须显式写等宽字体：通用 QPlainTextEdit 规则只给了底色与边框，
+   等宽是挂在 #log_view 上的 —— 不写这一条，详情日志会掉成雅黑。 */
+QPlainTextEdit#detail_log_view, QTextEdit#detail_log_view {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 12px;
+    color: #1A2129;
+    background-color: #FBFCFD;
+    border: 1px solid #D8DEE6;
+    padding: 4px 6px;
+}
+
+/* 详情窗里的搜索框（QLineEdit）：与主日志区的 #search_edit 同一套观感 ——
+   等宽字体便于核对初始化码，白底细边框，聚焦转强调色（聚焦态沿用通用
+   QLineEdit:focus 规则，这里不重复写）。 */
+QLineEdit#detail_search_edit {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 12px;
+    color: #1A2129;
+    background-color: #FFFFFF;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 10px;
+    min-height: 18px;
+}
+
+/* 详情窗里的行数计数（QLabel，ui-dev 已设 role="hint"）：与主界面的
+   #log_count_label / #records_count_label 完全一致 —— 等宽 11px 次文字色，
+   数字跳动时不会把旁边的搜索框挤来挤去。 */
+QLabel#detail_count_label {
+    font-family: "Consolas", "Cascadia Mono", monospace;
+    font-size: 11px;
+    color: #5A6674;
+    padding: 0px 2px;
+}
+
+/* 对话框内的按钮条（**备用**）：ui_main.py 的 DetailDialog 底部是一段裸
+   QHBoxLayout（没有容器控件），所以现在没有名为 detail_toolbar 的控件，
+   这条不生效。保留的原因：若将来给按钮条套一个 QWidget/QFrame 容器，
+   命名即生效（按钮条在底部时用上边框分隔；放顶部就把 border-top 换成
+   border-bottom）。这同样不算"已覆盖"。 */
+QWidget#detail_toolbar, QFrame#detail_toolbar {
+    background-color: #F2F4F7;
+    border: none;
+    border-top: 1px solid #D8DEE6;
+}
+/* 按钮条里的 11px 说明文字（例如"共 3 项"），比正文再退一档 */
+QWidget#detail_toolbar QLabel, QFrame#detail_toolbar QLabel {
+    color: #5A6674;
+    font-size: 11px;
+}
+
+/* 「复制全部」：标准次按钮（白底细边框），是对话框里的主要动作 */
+QPushButton#detail_copy_btn {
+    background-color: #FFFFFF;
+    color: #1A2129;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 14px;
+    min-width: 60px;
+    min-height: 18px;
+}
+QPushButton#detail_copy_btn:hover {
+    background-color: #F2F4F7;
+    border: 1px solid #1F6FEB;
+}
+QPushButton#detail_copy_btn:pressed {
+    background-color: #E8EDF3;
+    border: 1px solid #0B3A6F;
+}
+
+/* 「关闭」：同样是次按钮，但文字退成次色 —— 两个按钮并排时，读者的第一眼
+   落在「复制全部」上，符合"一个窗口只有一个主要动作"的原则 */
+QPushButton#detail_close_btn {
+    background-color: #FFFFFF;
+    color: #5A6674;
+    border: 1px solid #D8DEE6;
+    border-radius: 3px;
+    padding: 3px 14px;
+    min-width: 60px;
+    min-height: 18px;
+}
+QPushButton#detail_close_btn:hover {
+    background-color: #F2F4F7;
+    border: 1px solid #1F6FEB;
+    color: #1A2129;
+}
+QPushButton#detail_close_btn:pressed {
+    background-color: #E8EDF3;
+    border: 1px solid #0B3A6F;
+    color: #1A2129;
+}

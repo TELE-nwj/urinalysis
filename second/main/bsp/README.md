@@ -44,21 +44,18 @@
 | `BSP_PIN_KEY2` | GPIO9 | 按键 2 |
 
 > 接口在 `driver/key`：软件消抖、**只出短按事件**（无长按/连发），**业务未接入**。
-> 注：原 KEY1/KEY2 用的 GPIO4 / GPIO5 现已改作 INA228 的 ALERT / SDA。
+> 注：原 KEY1/KEY2 用的 GPIO4 / GPIO5 已让出；GPIO4 / GPIO5 / GPIO6 现空闲
+> （原 INA228 电量计方案已取消，见下方电池检测段）。
 
-### 电池（INA228 电量计，I2C）
+### 电池电压检测（ADC 分压）
 
 | 宏 | 值 | 说明 |
 |---|---|---|
-| `BSP_I2C_INA_PORT` | `0` | I2C0 |
-| `BSP_PIN_INA_SDA` | GPIO5 | INA228 SDA |
-| `BSP_PIN_INA_SCL` | GPIO6 | INA228 SCL |
-| `BSP_PIN_INA_ALERT` | GPIO4 | ALERT（低有效），`0` 表示不使用 |
-| `BSP_INA228_ADDR` | `0x40` | 7 位地址（A1=A0 接 GND） |
-| `BSP_I2C_INA_FREQ_HZ` | `400000` | 400kHz 快速模式 |
+| `BSP_ADC_BATTERY_UNIT` | `ADC_UNIT_1` | ADC 单元（ADC1） |
+| `BSP_PIN_BATTERY_ADC` | GPIO7 | 电池电压经分压网络接入（ESP32-S3 `ADC1_CH6`） |
 
-> 取代原 GPIO7 的 ADC 电池检测；`driver/battery`（ADC stub）已不编入构建。
-> 写 INA228 驱动时需把 `esp_driver_i2c` 加进 `main/CMakeLists.txt` 的 `REQUIRES`。
+> **方案为 ADC 分压检测，INA228 电量计方案已取消**（原 I2C 占用的 GPIO4/5/6 现空闲）。
+> 采集实现见 `driver/battery` —— **目前仍是 stub，且未编入构建**。
 
 ### 其他
 

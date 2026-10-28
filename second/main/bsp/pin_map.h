@@ -37,7 +37,8 @@ extern "C" {
 
 /* ==================== 按键 (2 路) ====================
  * 低有效(按下接地) + 内部上拉；只做软件消抖，只出"短按"事件(无长按/连发)。
- * KEY1/KEY2 沿用原 KEY3/KEY4 的引脚：GPIO4/GPIO5 已改作 INA228 ALERT/SDA。
+ * KEY1/KEY2 沿用原 KEY3/KEY4 的引脚。GPIO4/GPIO5/GPIO6 现空闲
+ * （原 INA228 电量计方案已取消，见下方电池检测段）。
  */
 #define BSP_PIN_KEY1          GPIO_NUM_8    /* 按键 1 */
 #define BSP_PIN_KEY2          GPIO_NUM_9    /* 按键 2 */
@@ -48,19 +49,14 @@ extern "C" {
 #define BSP_PIN_UART_SCREEN_RX GPIO_NUM_18  /* MCU RX <- 屏 TX */
 #define BSP_UART_SCREEN_BAUD  115200        /* 波特率(按屏设置) */
 
-/* ==================== INA228 电量计 (I2C) ====================
- * 本板用 INA228 经 I2C 上报电池电压/电流/电量，取代原 ESP32 ADC 电池检测
- * （故 GPIO7 的 ADC 用途已取消，该脚现为空闲）。
- * 引脚从原按键/ADC 释放出来的 GPIO 里选取，与旧原理图上的 INA228 接法一致。
- * 注：写 INA228 驱动时需把 esp_driver_i2c 加入 main/CMakeLists.txt 的 REQUIRES，
- *     并 include "driver/i2c_master.h"。
+/* ==================== 电池电压检测 (ADC 分压) ====================
+ * 电池电压经板上电阻分压网络接到 ADC 引脚，由 driver/battery 采样后换算电量。
+ * 分压比 (R1+R2)/R2 待定 —— 实现时在 battery 驱动里用宏定义，不要硬编码。
+ * 注：原 INA228 电量计(I2C, 占 GPIO4/5/6)方案已取消，该三脚现为空闲。
+ *     分压后的电压不得超过 ADC 量程(见 ADC_ATTEN_DB_12 ≈ 3.3V)。
  */
-#define BSP_I2C_INA_PORT      0             /* I2C 端口号 (I2C0) */
-#define BSP_PIN_INA_SDA       GPIO_NUM_5    /* I2C SDA -> INA228 SDA */
-#define BSP_PIN_INA_SCL       GPIO_NUM_6    /* I2C SCL -> INA228 SCL */
-#define BSP_I2C_INA_FREQ_HZ   400000        /* 400kHz 快速模式 */
-#define BSP_PIN_INA_ALERT     GPIO_NUM_4    /* INA228 ALERT(低有效), 0=不用 */
-#define BSP_INA228_ADDR       0x40          /* 7 位地址 (A1=A0 接 GND) */
+#define BSP_ADC_BATTERY_UNIT  ADC_UNIT_1    /* ADC 单元: ADC1 */
+#define BSP_PIN_BATTERY_ADC   GPIO_NUM_7    /* 分压采样脚 (ESP32-S3 ADC1_CH6) */
 
 #ifdef __cplusplus
 }

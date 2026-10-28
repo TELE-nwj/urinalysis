@@ -1,0 +1,72 @@
+[
+  {
+    "test": "test_session_normal_resume_duplicate_start_and_reset",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_session_header_verification_failure_keeps_reserved_name",
+    "passed": false,
+    "failure_line": 77
+  },
+  {
+    "test": "test_session_running_retry_does_not_allocate_second_name",
+    "passed": false,
+    "failure_line": 84
+  },
+  {
+    "test": "test_session_create_reply_failure_does_not_resend_create",
+    "passed": false,
+    "failure_line": 88
+  },
+  {
+    "test": "test_session_partial_header_is_not_rewritten",
+    "passed": false,
+    "failure_line": 94
+  },
+  {
+    "test": "test_session_close_reply_failure_can_recover_same_file",
+    "passed": false,
+    "failure_line": 100
+  },
+  {
+    "test": "test_session_append_missing_does_not_overwrite_previous_rows",
+    "passed": false,
+    "failure_line": 107
+  },
+  {
+    "test": "test_session_recovery_missing_does_not_create",
+    "passed": false,
+    "failure_line": 115
+  },
+  {
+    "test": "test_session_new_disk_missing_known_file_does_not_create",
+    "passed": false,
+    "failure_line": 120
+  },
+  {
+    "test": "test_session_no_disk_then_insert_creates_only_once",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_session_existing_records_are_skipped_and_preserved",
+    "passed": true,
+    "failure_line": 0
+  },
+  {
+    "test": "test_session_repeated_create_api_uses_existing_name",
+    "passed": false,
+    "failure_line": 135
+  },
+  {
+    "test": "test_session_suspicious_short_length_blocks_append",
+    "passed": false,
+    "failure_line": 139
+  },
+  {
+    "test": "test_session_failed_lookup_does_not_reserve_or_create",
+    "passed": true,
+    "failure_line": 0
+  }
+]

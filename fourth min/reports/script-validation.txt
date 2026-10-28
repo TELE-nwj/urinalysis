@@ -1,0 +1,4 @@
+PASS syntax: idf-env.ps1
+PASS syntax: build.ps1
+PASS syntax: flash.ps1
+PASS static check: Port mandatory, no default; flash script was not run.
