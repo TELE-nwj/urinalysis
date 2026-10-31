@@ -3,6 +3,7 @@
 #include "service/screen/screen.h"
 #include "service/storage/storage.h"
 #include "service/urine/urine.h"
+#include "service/mobile/mobile.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -64,9 +65,9 @@ static bool s_capture_restore; /* 最外层进入前液滴中断是否开启 */
 static float     s_last_ml   = 0.0f;  /* 上一分钟标记时的累计尿量(算增量用) */
 static SemaphoreHandle_t s_spi_mtx = NULL; /* 串行化 CH376 SPI 访问 */
 
-/* ---- 存储区进出：暂停串口屏推送，暂关液滴中断，拿 SPI 锁。
+/* ---- 存储区进出：暂停手机状态/串口屏推送，暂关液滴中断，拿 SPI 锁。
  * 这里是互斥保护的事务区，不是关闭调度的 FreeRTOS 临界区。
- * CH376 可等待/让出任务，不关闭调度。
+ * CH376 可等待/让出任务；Wi-Fi 连接、控制 ACK 和网络底层继续运行。
  *
  * 【可重入设计】递归互斥量 + s_crit_depth 深度计数，两件事各管各的：
  *   · take/give —— 每一层都配对(见下面的理由)，负责跨任务串行；
@@ -84,6 +85,7 @@ static void s1_crit_enter(void)
     }
 
     if (s_crit_depth == 0) {
+        service_mobile_set_push_paused(true);
         s_capture_restore = urine_capture_suspend();
         s_ch376_lvl   = esp_log_level_get(CH376_LOG_TAG);
         s_storage_lvl = esp_log_level_get(STORAGE_LOG_TAG);
@@ -105,6 +107,7 @@ static void s1_crit_exit(void)
         esp_log_level_set(STORAGE_LOG_TAG, s_storage_lvl);
         s_ui_pause = false;
         urine_capture_restore(s_capture_restore);
+        service_mobile_set_push_paused(false);
     }
 
     /* 【必须每一层都 give，不能"只在最外层 give"】
@@ -184,7 +187,7 @@ static void s1_push_ui(void)
  *   本分钟尿量 = 本分钟末累计总量 - 上一分钟标记时的累计总量
  *   平均流速   = 本分钟尿量 × 60
  *
- *   触发时暂停串口屏数据推送、关闭液滴中断、拿 SPI 锁。
+ *   触发时暂停手机/串口屏数据推送、关闭液滴中断、拿 SPI 锁。
  *   storage 阶段日志保留，CH376 的警告/错误保留。
  * ============================================================ */
 static void s1_record_write(uint32_t minute)
@@ -222,7 +225,7 @@ static void s1_record_write(uint32_t minute)
     }
 
     /* 写盘前留一行本条内容：事后能核对 U 盘里的记录与屏上读数是否对得上 */
-    ESP_LOGI(TAG, ">>>>> 进入临界区(停液滴中断/停推屏): 第%lu分钟 %s", (unsigned long)minute, line);
+    ESP_LOGI(TAG, ">>>>> 进入临界区(停液滴中断/停推屏/暂停手机推送): 第%lu分钟 %s", (unsigned long)minute, line);
 
     line[n++] = '\r';                             /* 行尾 */
     line[n++] = '\n';

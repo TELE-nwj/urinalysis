@@ -114,7 +114,18 @@ static err_t create_with_header(void)
  * 原自检每次开机都重建 /TEST.TXT，导致"电脑上删掉的文件又出现"，已删除。
  * (驱动+U盘的正确性已由 2026-09-14 的日志自检验证通过) */
 
-static err_t storage_init_impl(void)
+/* 初始化阶段的等待超时(轮)。U盘没插时 DISK_MOUNT(0x31) 会一直轮询 INT 引脚，
+ * 默认上限 500000 轮(~7s)把启动路径卡死；这里缩短到 60000 轮(约 0.7s)快速失败。
+ * 单次约 0.7s = 60000*10us + 周期性让出节拍；若实测某些大容量U盘正常挂载也要
+ * 超过这个值(表现为插着U盘却初始化失败)，只需向上调这一个宏(如 120000 ≈ 1.3s)。
+ * ★ 只用于初始化阶段：CH376_DiagPrepare 的物理读和之后所有写盘命令(DISK_WRITE/
+ *   BYTE_WRITE/FILE_CLOSE 等)一律用默认长超时，否则正常U盘会被误判失败而拒写。 */
+#define STORAGE_INIT_WAIT_TIMEOUT   60000u
+
+/* 真正的初始化流程。
+ * restore_timeout：本次初始化结束后应还原的超时值(由 outer 传入，避免在这里
+ * 硬编码 500000 而覆盖掉上层的设置)。 */
+static err_t storage_init_body(uint32_t restore_timeout)
 {
     CH376_DiagReset();
     s_ready=false;
@@ -141,6 +152,13 @@ static err_t storage_init_impl(void)
         s_ready=false;
         return ERR_FAIL;
     }
+
+    /* 6) 挂载完成就立刻还原长超时：
+     *    DiagPrepare 要做 MBR/BPB/FAT1/FAT2 的 512B 物理读，且结果是写盘保护的
+     *    核心依据(s_geometry.valid / s_fat_healthy)。用短超时去读，慢一点的
+     *    正常U盘会被误判成坏盘，进而永久拒写 —— 这个误判比多等 1.7s 危险得多。 */
+    CH376_SetWaitTimeout(restore_timeout);
+
     if (s_init_mount_ok && (!CH376_DiagPrepare(true) || !CH376_DiagEnsureReady())) {
         return ERR_FAIL;
     }
@@ -148,6 +166,19 @@ static err_t storage_init_impl(void)
     s_ready = true;
     ESP_LOGI(TAG, "存储服务就绪");
     return ERR_OK;
+}
+
+/* 统一的超时开关：进入时缩短，离开时还原。
+ * 下面只有 return result 这一个出口，无论 storage_init_body 从哪条分支返回
+ * (USB主机模式失败/磁盘未连接/挂载失败/DiagPrepare失败…)，超时都会被还原，
+ * 后续写盘不会残留短超时。 */
+static err_t storage_init_impl(void)
+{
+    const uint32_t saved = CH376_GetWaitTimeout();
+    CH376_SetWaitTimeout(STORAGE_INIT_WAIT_TIMEOUT);
+    err_t result = storage_init_body(saved);
+    CH376_SetWaitTimeout(saved);
+    return result;
 }
 
 /* 介质同步：每次"要开始新动作"前调用（此时必须没有文件打开）。

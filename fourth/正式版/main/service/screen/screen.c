@@ -149,15 +149,16 @@ err_t screen_init(void)
     snprintf(page, sizeof(page), "page %u", (unsigned)SCR_PAGE_MAIN);
     send_data_frame(page);
 
-    /* 3. 控件初值：只刷「不会每秒自动更新」的那几个。
-     *    报警栏/电量/时钟由 monitor 的 tick_1s() 每秒推送（且 monitor 启动后
-     *    第一轮就会触发一次），这里再发一遍只会多占 3 帧的串口时间
-     *    （115200 下约 20~30ms），启动阶段可以省掉。 */
+    /* 3. 各控件初值：上电先把 8 个控件刷成确定的初始内容，避免屏上残留 HMI 工程
+     *    的默认文本、与固件实际状态不一致。 */
     screen_show_urine(0.0f);            /* 累计尿量 0.0 mL */
     screen_show_rate(0.0f);             /* 实时速率 0.0 mL/h */
     screen_show_drops(0);               /* 累计滴数 0 */
     screen_show_elapsed("00:00:00");    /* 会话计时从零起算 */
     screen_show_status("reset");        /* 状态栏初值 = 待开始 */
+    screen_show_alert("A");              /* 报警栏初值：A=正常 */
+    screen_show_battery(-1);            /* 电量尚未采样：先显示 -- */
+    screen_show_clock("00:00:00");      /* 实时时钟未同步时也从 00:00:00 起算 */
 
     return ERR_OK;
 }

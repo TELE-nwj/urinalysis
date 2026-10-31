@@ -27,11 +27,6 @@
 //=============================================================================
 static const char *TAG = "CH376T";
 
-/* wait() 的轮询上限(轮)：默认 500000 ≈ 7s，保持驱动原有行为。
- * 上层可用 CH376_SetWaitTimeout() 按场景临时缩短(如启动阶段探测介质)，
- * 缩短后必须还原，否则写盘命令会因超时过短而误判失败。 */
-static uint32_t s_wait_timeout_max = CH376_WAIT_TIMEOUT_DEFAULT;
-
 //=============================================================================
 // 延时函数
 //=============================================================================
@@ -149,9 +144,8 @@ uint8_t CH376_Read(void)
 uint8_t wait(void)
 {
     uint32_t timeout_counter = 0;
-    /* 超时上限：DISK_MOUNT 挂载大容量U盘可能耗时较久，默认 500000 轮(~7s)；
-     * 这里取模块级变量，允许上层按场景临时缩短(启动探测阶段)。 */
-    const uint32_t timeout_max = s_wait_timeout_max;
+    /* 超时上限：DISK_MOUNT 挂载大容量U盘可能耗时较久，放宽到 ~7s */
+    const uint32_t timeout_max = 500000;
 // 轮询等待中断（INT引脚拉低）
     ESP_LOGI(TAG, "等待CH376T中断响应...");
     timeout_counter = 0;
@@ -178,22 +172,6 @@ uint8_t wait(void)
     }
     ESP_LOGI(TAG, "检测到中断，INT引脚已拉低");
     return CH376_GetStatus();
-}
-
-/* 设置 wait() 轮询上限；rounds==0 视为恢复默认值（防止误传 0 造成立即超时） */
-void CH376_SetWaitTimeout(uint32_t rounds)
-{
-    if (rounds == 0) {
-        rounds = CH376_WAIT_TIMEOUT_DEFAULT;
-    }
-    ESP_LOGI(TAG, "wait超时上限: %lu → %lu 轮",
-             (unsigned long)s_wait_timeout_max, (unsigned long)rounds);
-    s_wait_timeout_max = rounds;
-}
-
-uint32_t CH376_GetWaitTimeout(void)
-{
-    return s_wait_timeout_max;
 }
 
 uint8_t CH376_GetStatus(void)

@@ -26,14 +26,22 @@
 
 /* 应用层 */
 #include "app/monitor/monitor.h"
-#include "app/mobile/mobile.h"
-#include "esp_mac.h"
-#include <stdio.h>
 
 static const char *TAG = "main";
 
 void app_main(void)
 {
+    /* 【轻量化：日志降噪】先把噪声最大的两个模块降到 WARN。
+     * 原因：CH376 的 wait() 每次调用要打 3 行日志（"等待中断"/"检测到中断"/"中断代码"），
+     * 整条初始化链累计 35~45 行；每行在 115200 波特下约 5~6ms，合计 200~270ms 全压在启动上。
+     * screen 每发一帧也打一行，运行期约 23 行/秒。
+     * 这两类日志日常使用价值低，降级后：
+     *   · 启动快约 250~350ms
+     *   · 写盘事务不再把日志挤在"关闭液滴中断"的窗口里（窗口短一半，丢滴也少一半）
+     * 其它模块（main/S1/monitor/storage）的日志保持 INFO 不变。 */
+    esp_log_level_set("CH376T", ESP_LOG_WARN);
+    esp_log_level_set("screen", ESP_LOG_WARN);
+
     /* 启动标识：编译日期+时间。用来确认板子上跑的到底是哪一次编译的固件
        (IDE 的"当前工程"曾经指向参考工程 F:\ESP32\niaio\project，别烧错了) */
     ESP_LOGI(TAG, "=================================================");
@@ -52,32 +60,25 @@ void app_main(void)
     if (power_init() != ERR_OK) {           /* 电池 ADC 分压采样 */
         ESP_LOGW(TAG, "电量检测初始化失败，继续运行(电量显示 --)");
     }
-    if (storage_init() != ERR_OK) {         /* U盘: 进主机模式+检测磁盘 */
+
+    /* U盘: 进主机模式 + 检测磁盘 + FAT 预检。
+     *
+     * 【为什么必须在 app_monitor_start() 之前】
+     *   这条链里全是 CH376 的软件模拟 SPI 事务（位翻转 + 延时），一次
+     *   DISK_MOUNT 在 U 盘未插时最坏要等到 wait() 超时。它和 monitor 任务
+     *   共用同一颗 CH376，而软 SPI 没有互斥保护 —— 如果放到 monitor 启动
+     *   之后再跑，用户此时按键开始测量会触发 S1 侧的 storage_init，
+     *   两个任务同时操作 SPI 会把命令序列打乱，可能写坏 U 盘。
+     *   所以这里宁可让启动多等一段确定的时间，也不能引入并发。
+     *   （初始化阶段已设短超时，U 盘没插时不会死等 7 秒。） */
+    if (storage_init() != ERR_OK) {
         ESP_LOGW(TAG, "存储未就绪(可能没插U盘), 仍继续运行");
     }
-
-    /* 在唯一的状态属主启动之前，先注册永久完成回调适配器。 */
-    uint8_t mac[6] = {0};
-    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
-    static char device_id[32];
-    snprintf(device_id, sizeof(device_id), "NIAIO-%02X%02X%02X", mac[3], mac[4], mac[5]);
-    const app_mobile_config_t mobile_config = {
-        .device_id = device_id,
-        .ap_ssid = CONFIG_NIAIO_AP_SSID,
-        .ap_password = CONFIG_NIAIO_AP_PASSWORD,
-        .ap_channel = 6,
-        .ap_max_connections = 1,
-    };
-    const err_t mobile_init_result = app_mobile_init(&mobile_config);
-    if (mobile_init_result != ERR_OK) ESP_LOGE(TAG, "手机适配器初始化失败: %ld", (long)mobile_init_result);
 
     /* ---- app 启动：按键与状态机 ---- */
     if (app_monitor_start() != ERR_OK) {
         ESP_LOGE(TAG, "按键/状态机启动失败");
         return;
-    }
-    if (mobile_init_result == ERR_OK && app_mobile_start() != ERR_OK) {
-        ESP_LOGW(TAG, "手机网络启动失败，本地测量仍可使用");
     }
 
     /* 主循环空转；按键、测量、状态转换，以及每秒的电量/时间推送，
